@@ -53,6 +53,14 @@ export const components: ThemeOptions['components'] = {
     },
   },
 
+  MuiBottomNavigationAction: {
+    styleOverrides: {
+      label: {
+        fontSize: '0.625rem !important',
+      },
+    },
+  },
+
   MuiChip: {
     styleOverrides: {
       root: {

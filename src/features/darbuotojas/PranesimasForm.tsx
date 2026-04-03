@@ -5,8 +5,9 @@ import {
   Box, Typography, Stack, IconButton, Button,
   FormControl, InputLabel, Select, MenuItem, Divider,
 } from '@mui/material'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import CloseIcon from '@mui/icons-material/Close'
 import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined'
+import { LocationMap } from '../../components/LocationMap'
 
 const options = {
   description: [
@@ -19,6 +20,7 @@ const options = {
     'Ryšio įrangos apžiūra',
     'Semaforo lempos keitimas',
   ],
+  category: ['Bėgiai', 'Iešmai', 'Signalizacija', 'Kontaktinis tinklas', 'Ryšiai', 'Statiniai'],
   planningPlant: ['DA01', 'DA02', 'DA03'],
   functionalLocation: [
     'LG-L01-000GIR-AELS',
@@ -42,17 +44,21 @@ const options = {
   ],
 }
 
+const DEFAULT_LOCATION = { lat: 54.8983, lng: 23.9275 }
+
 export function PranesimasForm() {
   const navigate = useNavigate()
   const { addPranesimas } = usePranesimai()
   const [form, setForm] = useState({
-    description:       '',
-    planningPlant:     '',
-    functionalLocation:'',
-    maintenancePlant:  '',
-    equipment:         '',
-    malfunctionTime:   '',
+    description:        '',
+    category:           '',
+    planningPlant:      '',
+    functionalLocation: '',
+    maintenancePlant:   '',
+    equipment:          '',
+    malfunctionTime:    '',
   })
+  const [location] = useState(DEFAULT_LOCATION)
   const [photos, setPhotos] = useState<string[]>([])
 
   const set = (field: string) => (e: any) =>
@@ -67,13 +73,13 @@ export function PranesimasForm() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-        <IconButton size="small" onClick={() => navigate(-1)}>
-          <ArrowBackIcon fontSize="small" />
-        </IconButton>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="subtitle1" fontWeight={600}>
-          Naujas pranešimas
+          Sukurti pranešimą
         </Typography>
+        <IconButton size="small" onClick={() => navigate(-1)}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
       </Stack>
 
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 2 }}>
@@ -83,6 +89,20 @@ export function PranesimasForm() {
             <InputLabel>Description</InputLabel>
             <Select value={form.description} label="Description" onChange={set('description')}>
               {options.description.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel>Category</InputLabel>
+            <Select value={form.category} label="Category" onChange={set('category')}>
+              {options.category.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel>Equipment</InputLabel>
+            <Select value={form.equipment} label="Equipment" onChange={set('equipment')}>
+              {options.equipment.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
             </Select>
           </FormControl>
 
@@ -108,13 +128,6 @@ export function PranesimasForm() {
           </FormControl>
 
           <FormControl fullWidth size="small">
-            <InputLabel>Equipment</InputLabel>
-            <Select value={form.equipment} label="Equipment" onChange={set('equipment')}>
-              {options.equipment.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth size="small">
             <InputLabel shrink>Malfunction Start (Time)</InputLabel>
             <Select
               value={form.malfunctionTime}
@@ -129,6 +142,15 @@ export function PranesimasForm() {
               ))}
             </Select>
           </FormControl>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+              GPS vieta
+            </Typography>
+            <LocationMap location={location} />
+          </Box>
 
           <Divider />
 
@@ -165,8 +187,8 @@ export function PranesimasForm() {
 
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <Button variant="contained" fullWidth onClick={() => {
-          addPranesimas({ ...form, photos })
-          navigate(-1)
+          addPranesimas({ ...form, location, photos })
+          navigate('/darbuotojas?tab=1')
         }}>
           Išsaugoti
         </Button>

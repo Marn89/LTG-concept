@@ -15,7 +15,7 @@ const roles = [
   },
   {
     id: 'vadovas',
-    label: 'Tech vadovas',
+    label: 'Tech priežiūros vadovas',
     description: 'Techninių darbų vadovas',
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -38,10 +38,8 @@ export function LoginPage() {
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-10">
         <div className="w-full">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-              </svg>
+            <div className="mb-4">
+              <img src="/images/ltg-logo.png" alt="LTG Infra" className="w-16 h-16 object-contain mx-auto" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">LTG</h1>
             <p className="mt-1 text-sm text-gray-500">Pasirinkite savo rolę</p>
@@ -53,25 +51,25 @@ export function LoginPage() {
                 key={role.id}
                 onClick={() => setSelected(role.id)}
                 className={`
-                  flex items-center gap-4 w-full px-5 py-4 rounded-2xl border-2 text-left
+                  flex items-center gap-4 w-full px-5 py-4 rounded-lg border-2 text-left
                   transition-all duration-150 cursor-pointer
                   ${selected === role.id
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 bg-white text-gray-800 hover:border-blue-300 hover:bg-blue-50/50'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                    : 'border-gray-200 bg-white text-gray-800 hover:border-emerald-300 hover:bg-emerald-50/50'
                   }
                 `}
               >
-                <span className={selected === role.id ? 'text-blue-600' : 'text-gray-400'}>
+                <span className={selected === role.id ? 'text-emerald-600' : 'text-gray-400'}>
                   {role.icon}
                 </span>
                 <div>
                   <p className="font-semibold text-base leading-tight">{role.label}</p>
-                  <p className={`text-xs mt-0.5 ${selected === role.id ? 'text-blue-500' : 'text-gray-400'}`}>
+                  <p className={`text-xs mt-0.5 ${selected === role.id ? 'text-emerald-500' : 'text-gray-400'}`}>
                     {role.description}
                   </p>
                 </div>
                 {selected === role.id && (
-                  <span className="ml-auto text-blue-600">
+                  <span className="ml-auto text-emerald-600">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                     </svg>
@@ -84,10 +82,10 @@ export function LoginPage() {
           <button
             disabled={!selected}
             onClick={handleContinue}
-            className="mt-6 w-full py-3 rounded-2xl bg-blue-600 text-white font-semibold text-sm
+            className="mt-6 w-full py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm
               transition-all duration-150
               disabled:opacity-40 disabled:cursor-not-allowed
-              hover:bg-blue-700 active:scale-[0.98]"
+              hover:bg-emerald-700 active:scale-[0.98]"
           >
             Tęsti
           </button>

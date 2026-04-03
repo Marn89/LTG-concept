@@ -9,6 +9,9 @@ export function PranesimaTab() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+      <Box sx={{ px: 2, pt: 3, pb: 0 }}>
+        <Typography variant="subtitle1" fontWeight={600}>Mano pranešimai</Typography>
+      </Box>
       {pranesimai.length === 0 ? (
         <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ flex: 1 }}>
           <NotificationsOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
@@ -21,12 +24,15 @@ export function PranesimaTab() {
           {pranesimai.map((p) => (
             <Box
               key={p.id}
+              onClick={() => navigate(`/darbuotojas/pranesimai/${p.id}`)}
               sx={{
                 bgcolor: 'background.paper',
                 borderRadius: '8px',
                 border: 1,
                 borderColor: 'divider',
                 p: 2,
+                cursor: 'pointer',
+                '&:active': { opacity: 0.7 },
               }}
             >
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
@@ -45,7 +51,7 @@ export function PranesimaTab() {
         </Stack>
       )}
 
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ p: 2 }}>
         <Button variant="contained" fullWidth onClick={() => navigate('/darbuotojas/pranesimai/naujas')}>
           Sukurti pranešimą
         </Button>

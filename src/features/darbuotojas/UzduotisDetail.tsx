@@ -1,5 +1,5 @@
 import { Box, Typography, Stack, IconButton, Divider, Button } from '@mui/material'
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import CloseIcon from '@mui/icons-material/Close'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { tasksByOffset } from './data'
 
@@ -26,13 +26,13 @@ export function UzduotisDetail() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-        <IconButton size="small" onClick={() => navigate(-1)}>
-          <ArrowBackIcon fontSize="small" />
-        </IconButton>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="subtitle1" fontWeight={600}>
           Užduotis
         </Typography>
+        <IconButton size="small" onClick={() => navigate(-1)}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
       </Stack>
 
       <Box sx={{ flex: 1, overflowY: 'auto' }}>

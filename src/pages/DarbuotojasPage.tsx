@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Box, BottomNavigation, BottomNavigationAction } from '@mui/material'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
@@ -7,7 +8,8 @@ import { UzduotysTab } from '../features/darbuotojas/UzduotysTab'
 import { PranesimaTab } from '../features/darbuotojas/PranesimaTab'
 
 export function DarbuotojasPage() {
-  const [tab, setTab] = useState(0)
+  const location = useLocation()
+  const [tab, setTab] = useState(() => Number(new URLSearchParams(location.search).get('tab') ?? 0))
 
   return (
     <MobileShell>
