@@ -28,7 +28,7 @@ export function VadovasPage() {
         sx={{ flexShrink: 0, borderTop: 1, borderColor: 'divider' }}
       >
         <BottomNavigationAction label="Pranešimai" icon={<NotificationsOutlinedIcon />} />
-        <BottomNavigationAction label="Aktyvūs darbai"     icon={<EngineeringOutlinedIcon />} />
+        <BottomNavigationAction label="Darbo užsakymai (WO)" icon={<EngineeringOutlinedIcon />} />
         <BottomNavigationAction label="Administravimas"    icon={<TuneOutlinedIcon />} />
       </BottomNavigation>
     </MobileShell>

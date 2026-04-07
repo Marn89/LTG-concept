@@ -1,4 +1,5 @@
 export type Status = 'pending' | 'in_progress' | 'done'
+export type WoStatus = 'ctrd_prel' | 'rel' | 'msgs' | 'tech'
 
 export interface Task {
   id: string

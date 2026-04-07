@@ -85,16 +85,9 @@ export function VadovasPranesimasDetail() {
         <Button
           variant="contained"
           fullWidth
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/vadovas/pranesimai/${id}/uzsakymas`)}
         >
           Sukurti darbo užsakymą
-        </Button>
-        <Button
-          variant="outlined"
-          fullWidth
-          onClick={() => navigate(-1)}
-        >
-          Sujungti
         </Button>
         <Button
           variant="outlined"
