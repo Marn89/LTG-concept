@@ -4,8 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, CssBaseline } from '@mui/material'
 import App from './App'
 import { theme } from './theme'
+import { CommentPanel } from './components/CommentPanel'
 import { PranesiamaiProvider } from './features/darbuotojas/PranesiamaiContext'
 import { WoFormProvider } from './features/vadovas/WoFormContext'
+import { PranesimasFormProvider } from './features/darbuotojas/PranesimasFormContext'
 import { WoProvider } from './features/vadovas/WoContext'
 import './index.css'
 
@@ -17,7 +19,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <PranesiamaiProvider>
           <WoProvider>
             <WoFormProvider>
-              <App />
+              <PranesimasFormProvider>
+                <App />
+                <CommentPanel />
+              </PranesimasFormProvider>
             </WoFormProvider>
           </WoProvider>
         </PranesiamaiProvider>

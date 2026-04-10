@@ -13,13 +13,11 @@ export function PranesimasDetail() {
   const p = pranesimai.find(n => n.id === id)
 
   const fields = p ? [
-    { label: 'Description',            value: p.description },
-    { label: 'Category',               value: p.category },
-    { label: 'Equipment',              value: p.equipment },
-    { label: 'Planning Plant',         value: p.planningPlant },
-    { label: 'Functional Location',    value: p.functionalLocation },
-    { label: 'Maintenance Plant',      value: p.maintenancePlant },
-    { label: 'Malfunction Start Time', value: p.malfunctionTime },
+    { label: 'Funkcinė lokacija',  value: p.functionalLocation },
+    { label: 'GPS koordinatės',    value: p.gpsCoordinates },
+    { label: 'Techninis objektas', value: p.techObject },
+    { label: 'Gedimo tipas',       value: p.faultType },
+    { label: 'Papildoma informacija', value: p.notes },
   ] : []
 
   return (

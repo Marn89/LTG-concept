@@ -55,6 +55,12 @@ export const components: ThemeOptions['components'] = {
 
   MuiBottomNavigationAction: {
     styleOverrides: {
+      root: {
+        color: tokens.colors.neutral[600],
+        '&.Mui-selected': {
+          color: tokens.colors.primary.main,
+        },
+      },
       label: {
         fontSize: '0.625rem !important',
       },

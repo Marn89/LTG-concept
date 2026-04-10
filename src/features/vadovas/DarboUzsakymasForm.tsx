@@ -73,7 +73,7 @@ export function DarboUzsakymasForm() {
         {p && (
           <Box sx={{ py: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Typography variant="caption" color="text.secondary" display="block">Pranešimas</Typography>
-            <Typography variant="body1">{p.description}</Typography>
+            <Typography variant="body1">{p.techObject || p.functionalLocation}</Typography>
           </Box>
         )}
 
@@ -102,7 +102,7 @@ export function DarboUzsakymasForm() {
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <Button variant="contained" fullWidth onClick={() => {
           addWorkOrder({
-            title: p?.description ?? 'Darbo užsakymas',
+            title: p?.techObject ?? p?.functionalLocation ?? 'Darbo užsakymas',
             location: p?.functionalLocation ?? '—',
             date: completionDate || new Date().toISOString().slice(0, 10),
             time: new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),

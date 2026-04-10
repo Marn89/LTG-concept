@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Typography, Stack, Chip, Divider } from '@mui/material'
+import { Box, Typography, Stack, Chip, Divider, Button } from '@mui/material'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined'
@@ -78,9 +78,14 @@ export function UzduotysTab() {
       </Stack>
 
       <Divider sx={{ mb: 1.5, mx: -2 }} />
-      <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
-        {heading}
-      </Typography>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+        <Typography variant="subtitle1" fontWeight={700}>
+          {heading}
+        </Typography>
+        <Button size="small" sx={{ fontSize: '0.7rem', p: 0, minWidth: 0, textTransform: 'none' }}>
+          Žiūrėti žemėlapyje
+        </Button>
+      </Stack>
 
       {tasks.length === 0 && (
         <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ flex: 1 }}>
