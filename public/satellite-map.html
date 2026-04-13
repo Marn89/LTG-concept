@@ -156,13 +156,13 @@
 
   <script>
     const map = L.map('map', { zoomControl: false, attributionControl: false })
-      .setView([54.640204, 25.227166], 18);
+      .setView([54.645769, 25.220098], 15);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
     }).addTo(map);
 
-    const MY_LOCATION = [54.640204, 25.227166];
+    const MY_LOCATION = [54.645769, 25.220098];
 
     // ── Distance helpers ─────────────────────────────────────────
     function distanceM(a, b) {
@@ -200,26 +200,29 @@
       return `rgb(${Math.floor(r/2)},${Math.floor(g/2)},${Math.floor(b/2)})`;
     }
 
-    function pinIcon(color, iconSvg, selected) {
+    function pinIcon(color, iconSvg, selected, scale) {
+      const s           = scale || 1;
+      const w           = Math.round(40 * s);
+      const h           = Math.round(52 * s);
       const stroke      = selected ? darken(color) : 'rgba(255,255,255,0.9)';
       const strokeWidth = selected ? '2.5' : '1.5';
       return L.divIcon({
         className: '',
         html: `
-          <svg width="40" height="52" viewBox="0 0 32 42" style="overflow:visible">
+          <svg width="${w}" height="${h}" viewBox="0 0 32 42" style="overflow:visible;transition:width 300ms ease,height 300ms ease">
             <path d="M16 0C7.163 0 0 7.163 0 16c0 11 16 26 16 26S32 27 32 16C32 7.163 24.837 0 16 0z"
               fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
             ${iconSvg}
           </svg>`,
-        iconSize: [40, 52],
-        iconAnchor: [20, 52],
+        iconSize: [w, h],
+        iconAnchor: [Math.round(w / 2), h],
       });
     }
 
-    function getIcon(p, selected) {
+    function getIcon(p, selected, scale) {
       const color   = p.type === 'notification' ? '#F59E0B' : '#43A047';
       const iconSvg = p.type === 'notification' ? bellSvg   : hammerSvg;
-      return pinIcon(color, iconSvg, selected);
+      return pinIcon(color, iconSvg, selected, scale || 1);
     }
 
     // ── Pan map so pin + popup are centered ───────────────────────
@@ -232,13 +235,7 @@
     }
 
     // ── Pins ──────────────────────────────────────────────────────
-    const pins = [
-      { lat: 54.639997, lng: 25.226488, title: 'WO-00422',                   desc: 'Bėgių patikrinimas — REL',        type: 'wo'           },
-      { lat: 54.640442, lng: 25.227803, title: 'Bėgių apžiūra',              desc: 'Įtrūkęs bėgis',                  type: 'notification' },
-      { lat: 54.640704, lng: 25.228993, title: 'Iešmo patikrinimas',         desc: 'Neveikia automatinis iešmas',     type: 'notification' },
-      { lat: 54.640115, lng: 25.226794, title: 'WO-00423',                   desc: 'Kontaktinio tinklo remontas — MSGS', type: 'wo'        },
-      { lat: 54.639713, lng: 25.225366, title: 'Semaforo lempos keitimas',   desc: 'Gedusi signalinė lempa',          type: 'notification' },
-    ];
+    const pins = [];
 
     let activeMarker = null;
     let activePin    = null;
@@ -347,6 +344,12 @@
     function renderDynamicPins(newPins) {
       dynamicMarkers.forEach(m => map.removeLayer(m));
       dynamicMarkers = [];
+
+      if (newPins.length > 0) {
+        const points = [MY_LOCATION, [newPins[0].lat, newPins[0].lng]];
+        map.fitBounds(points, { padding: [60, 60], animate: true });
+      }
+
       newPins.forEach(p => {
         const color = p.type === 'notification' ? '#F59E0B' : '#43A047';
         const label = p.type === 'notification' ? 'Pranešimas' : 'Darbo užsakymas';
@@ -368,6 +371,7 @@
         const marker = L.marker([p.lat, p.lng], { icon: getIcon(p, false) })
           .bindPopup(popup)
           .addTo(map);
+        marker._pinData = p;
         marker.on('click', e => {
           L.DomEvent.stopPropagation(e);
           if (activeMarker === marker) { resetActive(); marker.closePopup(); return; }
@@ -381,8 +385,27 @@
       });
     }
 
+    let hoveredMarker = null;
+
     window.addEventListener('message', e => {
-      if (e.data?.type === 'SET_PINS') renderDynamicPins(e.data.pins);
+      if (e.data?.type === 'SET_PINS') {
+        renderDynamicPins(e.data.pins);
+      } else if (e.data?.type === 'HIGHLIGHT_PIN') {
+        // clear previous hover
+        if (hoveredMarker && hoveredMarker !== activeMarker) {
+          hoveredMarker.setIcon(getIcon(hoveredMarker._pinData, false, 1));
+          hoveredMarker = null;
+        }
+        if (e.data.lat == null) return;
+        const m = dynamicMarkers.find(m =>
+          Math.abs(m._pinData.lat - e.data.lat) < 0.00001 &&
+          Math.abs(m._pinData.lng - e.data.lng) < 0.00001
+        );
+        if (m && m !== activeMarker) {
+          m.setIcon(getIcon(m._pinData, false, 1.3));
+          hoveredMarker = m;
+        }
+      }
     });
   </script>
 </body>

@@ -67,6 +67,15 @@ export const components: ThemeOptions['components'] = {
     },
   },
 
+  MuiTableCell: {
+    styleOverrides: {
+      root: {
+        padding: '12px 16px',
+        fontSize: '12px',
+      },
+    },
+  },
+
   MuiChip: {
     styleOverrides: {
       root: {
