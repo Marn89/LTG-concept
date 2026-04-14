@@ -1,5 +1,6 @@
-import { Box, Typography, Stack, IconButton, Divider, Button } from '@mui/material'
+import { Box, Typography, Stack, IconButton, Divider, Button, Tooltip } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { tasksByOffset } from './data'
 
@@ -56,7 +57,14 @@ export function UzduotisDetail() {
                 Komanda
               </Typography>
               {task.team.map(name => (
-                <Typography key={name} variant="body2">{name}</Typography>
+                <Stack key={name} direction="row" alignItems="center" spacing={0.5}>
+                  <Typography variant="body2">{name}</Typography>
+                  {name === task.seniorName && (
+                    <Tooltip title="Vyr. Technikas" placement="right">
+                      <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B', cursor: 'default' }} />
+                    </Tooltip>
+                  )}
+                </Stack>
               ))}
             </Box>
 

@@ -1,12 +1,14 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { NOW } from '../../utils/now'
 import { useNavigate } from 'react-router-dom'
 import { Box, Typography, Stack, Chip, Divider, Button, IconButton, Dialog, DialogContent } from '@mui/material'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import PauseIcon from '@mui/icons-material/Pause'
 import { tasksByOffset, type Status } from './data'
+import { usePranesimai } from './PranesiamaiContext'
+import { UzduotisAtaskaitaScreen } from './UzduotisAtaskaitaScreen'
+import type { CompletionReport } from './UzduotisAtaskaitaScreen'
 
 const DAY_ABBR = ['Sek.', 'Pir.', 'Antr.', 'Treč.', 'Ketv.', 'Penkt.', 'Šeš.']
 
@@ -29,9 +31,18 @@ export function UzduotysTab() {
   const [offset, setOffset] = useState(0)
   const [showMap, setShowMap] = useState(false)
   const [filter, setFilter] = useState<Filter>('all')
-  const [timers, setTimers] = useState<Record<string, { startedAt: number | null; accumulated: number }>>({})
+  const allTasksForTimer = tasksByOffset[0] ?? []
+  const [timers, setTimers] = useState<Record<string, { startedAt: number | null; accumulated: number }>>(() => {
+    const init: Record<string, { startedAt: number | null; accumulated: number }> = {}
+    allTasksForTimer.filter(t => t.status === 'pending').forEach(t => {
+      init[t.id] = { startedAt: Date.now(), accumulated: 0 }
+    })
+    return init
+  })
   const [tick, setTick] = useState(0)
   const [pauseModal, setPauseModal] = useState<string | null>(null)
+  const [completeModal, setCompleteModal] = useState<{ id: string; title: string; subtitle: string; elapsed: number; pranesimasId?: string } | null>(null)
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
@@ -70,9 +81,12 @@ export function UzduotysTab() {
     })
   }
   const navigate = useNavigate()
-  const allTasks = tasksByOffset[offset] ?? []
+  const { updateWorkOrderStatus } = usePranesimai()
+  const allTasks = (tasksByOffset[offset] ?? []).map(t =>
+    completedIds.has(t.id) ? { ...t, status: 'done' as const } : t
+  ).sort((a, b) => (a.status === 'done' ? 1 : 0) - (b.status === 'done' ? 1 : 0))
   const tasks = allTasks.filter(t =>
-    filter === 'all' ? true : filter === 'done' ? t.status === 'done' : t.status !== 'done'
+    filter === 'all' ? t.status !== 'done' : t.status === 'done'
   )
 
   const sendPins = useCallback(() => {
@@ -87,7 +101,7 @@ export function UzduotysTab() {
     iframeRef.current?.contentWindow?.postMessage({ type: 'SET_PINS', pins }, '*')
   }, [tasks])
 
-  const today = useMemo(() => new Date(), [])
+  const today = useMemo(() => new Date(NOW), [])
   const todayDow = today.getDay()
   const mondayOffset = todayDow === 0 ? -6 : 1 - todayDow
 
@@ -171,17 +185,33 @@ export function UzduotysTab() {
         </Button>
       </Stack>
       <Stack direction="row" spacing={0.75} sx={{ mb: 1.5 }}>
-        {([['all', 'Visos'], ['todo', 'Padaryti'], ['done', 'Atliktos']] as [Filter, string][]).map(([val, label]) => (
+        {([['all', 'Laukia atlikimo'], ['done', 'Atliktos']] as [Filter, string][]).map(([val, label]) => {
+          const count = allTasks.filter(t => val === 'all' ? t.status !== 'done' : t.status === 'done').length
+          return (
           <Chip
             key={val}
-            label={label}
+            label={`${label} (${count})`}
             size="small"
             onClick={() => setFilter(val)}
-            color={filter === val ? 'primary' : 'default'}
-            variant={filter === val ? 'filled' : 'outlined'}
-            sx={{ cursor: 'pointer' }}
+            color="default"
+            variant="filled"
+            sx={{
+              cursor: 'pointer', fontSize: '0.7rem', height: 22, borderRadius: '999px',
+              '& .MuiChip-label': { px: 1.25 },
+              ...(filter === val && val === 'all' && {
+                bgcolor: '#007749',
+                color: '#fff',
+                '&:hover': { bgcolor: '#005f3a' },
+              }),
+              ...(filter === val && val === 'done' && {
+                bgcolor: 'rgba(0,119,73,0.12)',
+                color: '#007749',
+                '&:hover': { bgcolor: 'rgba(0,119,73,0.18)' },
+              }),
+            }}
           />
-        ))}
+        )})}
+
       </Stack>
 
       {tasks.length === 0 && (
@@ -201,13 +231,24 @@ export function UzduotysTab() {
             sx={{
               bgcolor: 'background.paper',
               borderRadius: '8px',
-              border: 1,
-              borderColor: 'divider',
-              p: 2,
+              border: '1px solid',
+              borderColor: task.status === 'pending' && timers[task.id]?.startedAt ? '#007749' : 'divider',
+              overflow: 'hidden',
               cursor: 'pointer',
               '&:active': { opacity: 0.7 },
+              ...(task.status === 'pending' && timers[task.id]?.startedAt && {
+                animationName: 'borderPulse',
+                animationDuration: '2s',
+                animationTimingFunction: 'ease-in-out',
+                animationIterationCount: 'infinite',
+              }),
+              '@keyframes borderPulse': {
+                '0%, 100%': { borderColor: '#007749' },
+                '50%': { borderColor: 'rgba(0,119,73,0.15)' },
+              },
             }}
           >
+            <Box sx={{ p: 2 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle2" fontWeight={600}>
@@ -218,22 +259,9 @@ export function UzduotysTab() {
                 </Typography>
               </Box>
               {task.status === 'pending' && (
-                <Box sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={e => { e.stopPropagation(); if (timers[task.id]?.startedAt) { handleTimerToggle(task.id); setPauseModal(task.id) } else { handleTimerToggle(task.id) } }}
-                    sx={{ fontSize: '0.75rem', px: 1.5, py: 0.5, minWidth: 0, bgcolor: timers[task.id]?.startedAt ? '#F59E0B' : undefined, '&:hover': { bgcolor: timers[task.id]?.startedAt ? '#D97706' : undefined } }}
-                  >
-                    {timers[task.id]?.startedAt ? <PauseIcon sx={{ fontSize: 16, mr: 0.5 }} /> : <PlayArrowIcon sx={{ fontSize: 16, mr: 0.5 }} />}
-                    {timers[task.id]?.startedAt ? 'Stabdyti' : timers[task.id] ? 'Tęsti' : 'Pradėti'}
-                  </Button>
-                  {timers[task.id] && (
-                    <Typography variant="body2" fontWeight={700} color={timers[task.id].startedAt ? 'primary.main' : 'text.secondary'} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatElapsed(getElapsed(task.id))}
-                    </Typography>
-                  )}
-                </Box>
+                <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                  {formatElapsed(getElapsed(task.id))}
+                </Typography>
               )}
               {task.status === 'done' && (
                 <Chip label={statusLabel[task.status]} size="small" color="success" variant="filled" />
@@ -244,6 +272,17 @@ export function UzduotysTab() {
               <LocationOnOutlinedIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
               <Typography variant="caption" color="text.secondary">{task.location}</Typography>
             </Stack>
+            </Box>
+            {task.status === 'pending' && (
+              <Box
+                onClick={e => { e.stopPropagation(); setCompleteModal({ id: task.id, title: task.title, subtitle: task.subtitle, elapsed: getElapsed(task.id), pranesimasId: task.pranesimasId }) }}
+                sx={{ bgcolor: 'primary.main', px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', '&:active': { opacity: 0.85 } }}
+              >
+                <Typography variant="body2" fontWeight={600} color="primary.contrastText">
+                  Baigti užduotį
+                </Typography>
+              </Box>
+            )}
           </Box>
         ))}
       </Stack>
@@ -271,17 +310,33 @@ export function UzduotysTab() {
           </Typography>
           <Stack spacing={1.5}>
             <Button fullWidth variant="outlined" onClick={() => { handleTimerToggle(pauseModal!); setPauseModal(null) }}>
-              Norėsiu tęsti
+              Tęsti
             </Button>
-            <Button fullWidth variant="contained" onClick={() => setPauseModal(null)}>
+            <Button fullWidth variant="contained" onClick={() => { setPauseModal(null); setCompleteModal(true) }}>
               Užduotį atlikau
-            </Button>
-            <Button fullWidth variant="outlined" color="warning" onClick={() => setPauseModal(null)}>
-              Reikės daugiau laiko
             </Button>
           </Stack>
         </DialogContent>
       </Dialog>
+      {completeModal && (
+        <Box sx={{ position: 'absolute', inset: 0, zIndex: 1300, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column' }}>
+          <UzduotisAtaskaitaScreen
+            title={completeModal.title}
+            subtitle={completeModal.subtitle}
+            elapsed={completeModal.elapsed}
+            onClose={() => setCompleteModal(null)}
+            onConfirm={(report: CompletionReport) => {
+              setCompletedIds(prev => new Set([...prev, completeModal.id]))
+              if (completeModal.pranesimasId) updateWorkOrderStatus(completeModal.pranesimasId, 'pending_approval', {
+                ...report,
+                elapsed: completeModal.elapsed,
+                completedAt: NOW.toLocaleDateString('lt-LT'),
+              })
+              setCompleteModal(null)
+            }}
+          />
+        </Box>
+      )}
     </Box>
   )
 }

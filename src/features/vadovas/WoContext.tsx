@@ -23,6 +23,7 @@ const WoContext = createContext<WoContextType>({
 })
 
 const initialWorkOrders: WorkOrder[] = [
+  { id: 'w0-1', title: 'Šviesoforo defektas',        location: 'Dūseikių geležinkelio stotis', date: '2026-04-14', time: '13:00', status: 'tech', workerName: 'Kęstutis Norvaišas' },
   { id: 'w1-1', title: 'Bėgių apžiūra',            location: 'Km 45+200 – 45+800',   date: '2026-04-07', time: '08:00', status: 'msgs',      workerName: 'Aleksas Jonaitis' },
   { id: 'w1-2', title: 'Iešmo Nr. 12 patikrinimas', location: 'Kauno st., A peronas', date: '2026-04-06', time: '10:30', status: 'ctrd_prel', workerName: 'Aleksas Jonaitis' },
   { id: 'w1-3', title: 'Signalo lempos keitimas',   location: 'Km 67+100',             date: '2026-04-05', time: '13:00', status: 'rel',       workerName: 'Aleksas Jonaitis' },

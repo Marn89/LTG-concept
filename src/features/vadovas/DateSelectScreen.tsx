@@ -3,10 +3,11 @@ import { Box, Stack, Typography, IconButton, List, ListItemButton, ListItemText 
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew'
 import CheckIcon from '@mui/icons-material/Check'
 import { useWoForm } from './WoFormContext'
+import { NOW } from '../../utils/now'
 
 function generateDays(count: number) {
   return Array.from({ length: count }, (_, i) => {
-    const d = new Date()
+    const d = new Date(NOW)
     d.setDate(d.getDate() + i)
     return d.toISOString().slice(0, 10)
   })

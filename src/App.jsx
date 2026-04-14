@@ -3,7 +3,6 @@ import { LoginPage } from './pages/LoginPage'
 import { DarbuotojasPage } from './pages/DarbuotojasPage'
 import { VadovasLayout } from './pages/VadovasLayout'
 import { VadovasPage } from './pages/VadovasPage'
-import { VadovasPranesimasDetailPage } from './pages/VadovasPranesimasDetailPage'
 import { DarboUzsakymasFormPage } from './pages/DarboUzsakymasFormPage'
 import { WorkerSelectPage } from './pages/WorkerSelectPage'
 import { EquipmentSelectPage } from './pages/EquipmentSelectPage'
@@ -32,7 +31,7 @@ export default function App() {
 
       <Route path="/vadovas" element={<VadovasLayout />}>
         <Route index element={<VadovasPage />} />
-        <Route path="pranesimai/:id" element={<VadovasPranesimasDetailPage />} />
+        <Route path="pranesimai/:id" element={<VadovasPage />} />
         <Route path="pranesimai/:id/uzsakymas" element={<DarboUzsakymasFormPage />} />
         <Route path="pranesimai/:id/uzsakymas/darbuotojai" element={<WorkerSelectPage />} />
         <Route path="pranesimai/:id/uzsakymas/iranga" element={<EquipmentSelectPage />} />

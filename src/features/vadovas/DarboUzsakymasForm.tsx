@@ -6,6 +6,7 @@ import { usePranesimai } from '../darbuotojas/PranesiamaiContext'
 import { useWoForm } from './WoFormContext'
 import { useWo } from './WoContext'
 import type { WoStatus } from '../darbuotojas/data'
+import { NOW } from '../../utils/now'
 
 const statusOptions = [
   { value: 'ctrd_prel', label: 'CTRD/PREL' },
@@ -104,8 +105,8 @@ export function DarboUzsakymasForm() {
           addWorkOrder({
             title: p?.techObject ?? p?.functionalLocation ?? 'Darbo užsakymas',
             location: p?.functionalLocation ?? '—',
-            date: completionDate || new Date().toISOString().slice(0, 10),
-            time: new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
+            date: completionDate || NOW.toISOString().slice(0, 10),
+            time: NOW.toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
             status: (status || 'ctrd_prel') as WoStatus,
             workerName: selectedWorkers.length > 0 ? selectedWorkers.join(', ') : '—',
           })

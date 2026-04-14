@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
+import { NOW } from '../../utils/now'
 
 export interface Pranesimas {
   id: string
@@ -16,12 +17,21 @@ export interface Pranesimas {
   isSeeded?: boolean
   isNew?: boolean
   pinType?: 'notification' | 'work_order'
-  workOrderStatus?: 'planned' | 'backlog' | 'in_progress' | 'done'
+  workOrderStatus?: 'planned' | 'backlog' | 'in_progress' | 'done' | 'overdue' | 'pending_approval'
   woTeam?: string[]
   woSeniorName?: string
   woCompletionDate?: string
   woMaterials?: string[]
   woOperation?: string
+  completionReport?: {
+    faultReason: string
+    materialsYn: string
+    material: string
+    amount: string
+    notes: string
+    elapsed: number
+    completedAt: string
+  }
 }
 
 interface ContextType {
@@ -29,6 +39,7 @@ interface ContextType {
   addPranesimas: (p: Omit<Pranesimas, 'id' | 'createdAt' | 'reporter' | 'createdDate'>) => void
   removePranesimas: (id: string) => void
   markAsRead: (id: string) => void
+  updateWorkOrderStatus: (id: string, status: NonNullable<Pranesimas['workOrderStatus']>, report?: Pranesimas['completionReport']) => void
 }
 
 const PranesiamaiContext = createContext<ContextType>({
@@ -36,6 +47,7 @@ const PranesiamaiContext = createContext<ContextType>({
   addPranesimas: () => {},
   removePranesimas: () => {},
   markAsRead: () => {},
+  updateWorkOrderStatus: () => {},
 })
 
 const initialPranesimai: Pranesimas[] = [
@@ -280,6 +292,106 @@ const initialPranesimai: Pranesimas[] = [
     reporter: 'Tech darbuotojas',
     createdAt: '13:10',
     createdDate: '2026-04-13',
+  },
+  // Today (2026-04-14)
+  {
+    isSeeded: true,
+    id: 'seed-27',
+    pinType: 'work_order',
+    workOrderStatus: 'planned',
+    functionalLocation: 'Dūseikių geležinkelio stotis',
+    gpsCoordinates: '54.640034, 25.226408',
+    techObject: 'Išleidžiamasis šviesoforas L1',
+    faultType: 'Šviesoforo defektas',
+    notes: 'Dūseikių gel. blogas šviesaforo matomumas',
+    location: { lat: 54.640034, lng: 25.226408 },
+    photos: ['/images/railway-signal-snow.jpg'],
+    reporter: 'Tech darbuotojas',
+    createdAt: '13:00',
+    createdDate: '2026-04-14',
+    woTeam: ['Kęstutis Norvaišas', 'Povilas Stankūnas', 'Henrikas Jokubaitis', 'Ričardas Butkevičius'],
+    woSeniorName: 'Kęstutis Norvaišas',
+    woCompletionDate: '2026-04-14',
+    woMaterials: ['Šviesaforo medžiagos'],
+    woOperation: 'Atlikti techninę apžiūrą',
+  },
+  {
+    isSeeded: true,
+    id: 'seed-28',
+    pinType: 'work_order',
+    workOrderStatus: 'in_progress',
+    functionalLocation: 'Dūseikių geležinkelio stotis',
+    gpsCoordinates: '54.643500, 25.222100',
+    techObject: 'Kabelių kanalas km 12+400',
+    faultType: 'Kabelių defektas',
+    notes: 'Pažeista kabelių izoliacija po liūties',
+    location: { lat: 54.6435, lng: 25.2221 },
+    photos: [],
+    reporter: 'Tech darbuotojas',
+    createdAt: '09:45',
+    createdDate: '2026-04-14',
+    woTeam: ['Ramūnas Žilinskas', 'Povilas Stankūnas', 'Henrikas Jokubaitis'],
+    woSeniorName: 'Ramūnas Žilinskas',
+    woCompletionDate: '2026-04-14',
+    woMaterials: ['Kabeliai'],
+    woOperation: 'Pakeisti kabelius',
+  },
+  {
+    isSeeded: true,
+    id: 'seed-29',
+    pinType: 'work_order',
+    workOrderStatus: 'backlog',
+    functionalLocation: 'Dūseikių geležinkelio stotis',
+    gpsCoordinates: '54.639800, 25.227600',
+    techObject: 'Iešmas Nr. 7',
+    faultType: 'Iešmo gedimas',
+    notes: 'Iešmas stringa pervedimo metu',
+    location: { lat: 54.6398, lng: 25.2276 },
+    photos: [],
+    reporter: 'Tech darbuotojas',
+    createdAt: '11:00',
+    createdDate: '2026-04-14',
+    woCompletionDate: '2026-04-14',
+    woMaterials: [],
+    woOperation: '',
+  },
+  {
+    isSeeded: true,
+    id: 'seed-30',
+    pinType: 'work_order',
+    workOrderStatus: 'overdue',
+    functionalLocation: 'Vilniaus geležinkelio stotis',
+    gpsCoordinates: '54.669300, 25.279700',
+    techObject: 'Transformatorius T-5',
+    faultType: 'Elektros gedimas',
+    notes: 'Transformatorius neveikia, terminas praleistas',
+    location: { lat: 54.6693, lng: 25.2797 },
+    photos: [],
+    reporter: 'Tech darbuotojas',
+    createdAt: '08:00',
+    createdDate: '2026-04-10',
+    woCompletionDate: '2026-04-10',
+    woMaterials: [],
+    woOperation: 'Pakeisti defektuotą įrangą',
+  },
+  {
+    isSeeded: true,
+    id: 'seed-31',
+    pinType: 'work_order',
+    workOrderStatus: 'pending_approval',
+    functionalLocation: 'Kauno geležinkelio stotis',
+    gpsCoordinates: '54.897200, 23.923200',
+    techObject: 'Relė AR-22',
+    faultType: 'Apsaugos relės gedimas',
+    notes: 'Darbai atlikti, laukiama vadovo patvirtinimo',
+    location: { lat: 54.8972, lng: 23.9232 },
+    photos: [],
+    reporter: 'Tech darbuotojas',
+    createdAt: '09:30',
+    createdDate: '2026-04-14',
+    woCompletionDate: '2026-04-14',
+    woMaterials: ['Signalizacijos moduliai'],
+    woOperation: 'Pakeisti defektuotą įrangą',
   },
   // This week (2026-04-11)
   {
@@ -1158,8 +1270,8 @@ export function PranesiamaiProvider({ children }: { children: ReactNode }) {
       ...p,
       id: Date.now().toString(),
       reporter: 'Tech darbuotojas',
-      createdAt: new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
-      createdDate: new Date().toISOString().slice(0, 10),
+      createdAt: NOW.toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' }),
+      createdDate: NOW.toISOString().slice(0, 10),
     }, ...prev])
   }
 
@@ -1169,8 +1281,11 @@ export function PranesiamaiProvider({ children }: { children: ReactNode }) {
   const markAsRead = (id: string) =>
     setPranesimai(prev => prev.map(p => p.id === id ? { ...p, isNew: false } : p))
 
+  const updateWorkOrderStatus = (id: string, status: NonNullable<Pranesimas['workOrderStatus']>, report?: Pranesimas['completionReport']) =>
+    setPranesimai(prev => prev.map(p => p.id === id ? { ...p, workOrderStatus: status, ...(report && { completionReport: report }) } : p))
+
   return (
-    <PranesiamaiContext.Provider value={{ pranesimai, addPranesimas, removePranesimas, markAsRead }}>
+    <PranesiamaiContext.Provider value={{ pranesimai, addPranesimas, removePranesimas, markAsRead, updateWorkOrderStatus }}>
       {children}
     </PranesiamaiContext.Provider>
   )

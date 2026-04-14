@@ -15,6 +15,8 @@ export interface Task {
   completionDate: string
   materials: string
   operation: string
+  seniorName?: string
+  pranesimasId?: string
 }
 
 export const tasksByOffset: Record<number, Task[]> = {
@@ -73,9 +75,11 @@ export const tasksByOffset: Record<number, Task[]> = {
       status: 'pending',
       notes: 'Dūseikių gel. blogas šviesaforo matomumas',
       team: ['Kęstutis Norvaišas', 'Povilas Stankūnas', 'Henrikas Jokubaitis', 'Ričardas Butkevičius'],
-      completionDate: '2026-04-15',
+      completionDate: '2026-04-14',
       materials: 'Šviesaforo medžiagos',
       operation: 'Atlikti techninę apžiūrą',
+      seniorName: 'Kęstutis Norvaišas',
+      pranesimasId: 'seed-27',
     },
     {
       id: '1',

@@ -6,8 +6,10 @@ import {
 } from '@mui/material'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
+import ReorderIcon from '@mui/icons-material/Reorder'
 import { useNavigate } from 'react-router-dom'
 import { usePranesimai, type Pranesimas } from '../darbuotojas/PranesiamaiContext'
+import { NOW } from '../../utils/now'
 import type { VadovasViewMode } from '../../pages/VadovasLayout'
 
 function dateLabel(date: string) {
@@ -73,7 +75,7 @@ type DateFilter = typeof DATE_FILTERS[number]['key']
 
 function matchesDateFilter(date: string, filter: DateFilter) {
   const d = new Date(date)
-  const now = new Date()
+  const now = new Date(NOW)
   if (filter === 'today') return d.toDateString() === now.toDateString()
   if (filter === 'week') {
     const start = new Date(now); start.setDate(now.getDate() - 6); start.setHours(0,0,0,0)
@@ -85,11 +87,13 @@ function matchesDateFilter(date: string, filter: DateFilter) {
 }
 
 const STATUS_FILTERS = [
-  { label: 'Visi',         key: 'all',         color: null       },
-  { label: 'Suplanuoti',   key: 'planned',     color: '#3B82F6'  },
-  { label: 'Vykdomi',      key: 'in_progress', color: '#F59E0B'  },
-  { label: 'Užbaigti',     key: 'done',        color: '#43A047'  },
-  { label: 'Nesuplanuoti', key: 'backlog',      color: '#D32F2F'  },
+  { label: 'Visi',                  key: 'all',              color: null       },
+  { label: 'Nesuplanuoti',          key: 'backlog',          color: '#D32F2F'  },
+  { label: 'Suplanuoti',            key: 'planned',          color: '#3B82F6'  },
+  { label: 'Vykdomi',               key: 'in_progress',      color: '#F59E0B'  },
+  { label: 'Vėluojantys',           key: 'overdue',          color: '#F97316'  },
+  { label: 'Laukia patvirtinimo',   key: 'pending_approval', color: '#8B5CF6'  },
+  { label: 'Atlikti',               key: 'done',             color: '#43A047'  },
 ] as const
 
 type StatusFilter = typeof STATUS_FILTERS[number]['key']
@@ -103,7 +107,8 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
     setInnerTab(v)
     localStorage.setItem('vadovas_innerTab', String(v))
   }
-  const [sortCol, setSortCol] = useState<'techObject' | 'faultType' | 'functionalLocation' | 'workOrderStatus' | 'createdDate' | 'createdAt' | 'reporter'>('createdDate')
+  const [groupedView, setGroupedView] = useState(false)
+  const [sortCol, setSortCol] = useState<'techObject' | 'faultType' | 'functionalLocation' | 'workOrderStatus' | 'woType' | 'createdDate' | 'createdAt' | 'reporter'>('createdDate')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   const handleSort = (col: typeof sortCol) => {
@@ -134,6 +139,7 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
       case 'faultType':          return p.faultType || ''
       case 'functionalLocation': return p.functionalLocation || ''
       case 'workOrderStatus':    return p.workOrderStatus ?? ''
+      case 'woType':             return p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'
       case 'reporter':           return p.reporter
       case 'createdAt':          return p.createdAt
       case 'createdDate':        return p.createdDate + p.createdAt
@@ -152,11 +158,13 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
   const dateFilteredWO = workOrders.filter(p => matchesDateFilter(p.createdDate, dateFilter))
 
   const statusCounts: Record<StatusFilter, number> = {
-    all:         dateFilteredWO.length,
-    planned:     dateFilteredWO.filter(p => p.workOrderStatus === 'planned').length,
-    in_progress: dateFilteredWO.filter(p => p.workOrderStatus === 'in_progress').length,
-    done:        dateFilteredWO.filter(p => p.workOrderStatus === 'done').length,
-    backlog:     dateFilteredWO.filter(p => p.workOrderStatus === 'backlog').length,
+    all:              dateFilteredWO.length,
+    backlog:          dateFilteredWO.filter(p => p.workOrderStatus === 'backlog').length,
+    planned:          dateFilteredWO.filter(p => p.workOrderStatus === 'planned').length,
+    in_progress:      dateFilteredWO.filter(p => p.workOrderStatus === 'in_progress').length,
+    done:             dateFilteredWO.filter(p => p.workOrderStatus === 'done').length,
+    overdue:          dateFilteredWO.filter(p => p.workOrderStatus === 'overdue').length,
+    pending_approval: dateFilteredWO.filter(p => p.workOrderStatus === 'pending_approval').length,
   }
 
 
@@ -246,10 +254,10 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
                       <Box>
                         <Typography variant="h6" lineHeight={1.1}>{f?.label}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {val === 'today' && new Date().toLocaleDateString('lt-LT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {val === 'today' && NOW.toLocaleDateString('lt-LT', { year: 'numeric', month: 'long', day: 'numeric' })}
                           {val === 'week' && (() => { const now = new Date(); const from = new Date(now); from.setDate(now.getDate() - 6); return `${from.toLocaleDateString('lt-LT', { month: 'long', day: 'numeric' })} – ${now.toLocaleDateString('lt-LT', { month: 'long', day: 'numeric' })}` })()}
-                          {val === 'month' && new Date().toLocaleDateString('lt-LT', { year: 'numeric', month: 'long' })}
-                          {val === 'year' && new Date().getFullYear()}
+                          {val === 'month' && NOW.toLocaleDateString('lt-LT', { year: 'numeric', month: 'long' })}
+                          {val === 'year' && NOW.getFullYear()}
                           {val === 'custom' && (customFrom || customTo ? `${customFrom || '…'} – ${customTo || '…'}` : 'Pasirinkite datą')}
                         </Typography>
                       </Box>
@@ -296,26 +304,31 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
                 </Stack>
               )}
               <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 0.75 }}>Statusas</Typography>
-              <Stack direction="row" spacing={0.75} flexWrap="wrap">
-                {STATUS_FILTERS.map(f => {
-                  const active = statusFilter === f.key
-                  const color = f.color
-                  return (
-                    <Chip
-                      key={f.key}
-                      label={`${f.label} (${statusCounts[f.key]})`}
-                      size="small"
-                      onClick={() => handleStatusFilter(f.key)}
-                      variant={active ? 'filled' : 'outlined'}
-                      sx={color ? {
-                        borderColor: color,
-                        color: active ? '#fff' : color,
-                        bgcolor: active ? color : 'transparent',
-                        '&:hover': { bgcolor: active ? color : `${color}18` },
-                      } : {}}
-                    />
-                  )
-                })}
+              <Stack direction="row" alignItems="flex-start">
+                <Stack direction="row" spacing={0.75} flexWrap="wrap" sx={{ flex: 1 }}>
+                  {STATUS_FILTERS.map(f => {
+                    const active = statusFilter === f.key
+                    const color = f.color
+                    return (
+                      <Chip
+                        key={f.key}
+                        label={`${f.label} (${statusCounts[f.key]})`}
+                        size="small"
+                        onClick={() => handleStatusFilter(f.key)}
+                        variant={active ? 'filled' : 'outlined'}
+                        sx={color ? {
+                          borderColor: color,
+                          color: active ? '#fff' : color,
+                          bgcolor: active ? color : 'transparent',
+                          '&:hover': { bgcolor: active ? color : `${color}18` },
+                        } : {}}
+                      />
+                    )
+                  })}
+                </Stack>
+                <IconButton size="small" sx={{ flexShrink: 0, color: groupedView ? 'primary.main' : 'text.secondary' }} onClick={() => setGroupedView(v => !v)}>
+                  <ReorderIcon fontSize="small" />
+                </IconButton>
               </Stack>
             </Box>
           )}
@@ -330,113 +343,136 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
               <NotificationsOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
               <Typography variant="body2" color="text.secondary">Pranešimų nėra</Typography>
             </Stack>
-          ) : (
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                {(innerTab === 0
-                    ? [
-                        { label: 'Techninis objektas', col: 'techObject'         },
-                        { label: 'Gedimo tipas',        col: 'faultType'          },
-                        { label: 'Lokacija',            col: 'functionalLocation' },
-                        { label: 'Statusas',            col: 'workOrderStatus'    },
-                        { label: 'Data',                col: 'createdDate'        },
-                        { label: 'Laikas',              col: 'createdAt'          },
-                      ]
-                    : [
-                        { label: 'Lokacija',            col: 'functionalLocation' },
-                        { label: 'Techninis objektas',  col: 'techObject'         },
-                        { label: 'Gedimo tipas',        col: 'faultType'          },
-                        { label: 'Pranešėjas',          col: 'reporter'           },
-                        { label: 'Pranešimo laikas',    col: 'createdDate'        },
-                      ]
-                ).map(({ label, col }: { label: string; col: string }) => (
-                  <TableCell key={col} sx={{ fontWeight: 600 }}>
-                    <TableSortLabel
-                      active={sortCol === col}
-                      direction={sortCol === col ? sortDir : 'asc'}
-                      onClick={() => handleSort(col as typeof sortCol)}
-                    >
-                      {label}
-                    </TableSortLabel>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map(p => (
+          ) : (() => {
+            const WO_STATUS_MAP: Record<string, { label: string; color: string }> = {
+              planned:          { label: 'Suplanuotas',         color: '#3B82F6' },
+              in_progress:      { label: 'Vykdomas',            color: '#F59E0B' },
+              done:             { label: 'Atliktas',            color: '#43A047' },
+              backlog:          { label: 'Nesuplanuotas',       color: '#D32F2F' },
+              overdue:          { label: 'Vėluojantis',         color: '#F97316' },
+              pending_approval: { label: 'Laukia patvirtinimo', color: '#8B5CF6' },
+            }
+
+            const WO_COLS = innerTab === 0
+              ? [
+                  { label: 'Gedimo tipas',                col: 'faultType'          },
+                  { label: 'Techninis objektas',          col: 'techObject'         },
+                  { label: 'Lokacija',                    col: 'functionalLocation' },
+                  { label: 'WO tipas',                    col: 'woType'             },
+                  ...(!groupedView ? [{ label: 'Statusas', col: 'workOrderStatus' }] : []),
+                  { label: 'Planuojamas darbo atlikimas', col: 'createdDate'        },
+                ]
+              : [
+                  { label: 'Lokacija',           col: 'functionalLocation' },
+                  { label: 'Techninis objektas', col: 'techObject'         },
+                  { label: 'Gedimo tipas',       col: 'faultType'          },
+                  { label: 'Pranešėjas',         col: 'reporter'           },
+                  { label: 'Pranešimo laikas',   col: 'createdDate'        },
+                ]
+
+            const cardCellSx = {
+              borderTop: '1px solid',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              py: 1.25,
+            }
+
+
+            const renderRow = (p: Pranesimas) => {
+              const cell = groupedView ? cardCellSx : {}
+              return (
                 <TableRow
                   key={p.id}
                   hover
-                  onClick={() => {
-                    markAsRead(p.id)
-                    if (onSelectPranesimas) onSelectPranesimas(p.id)
-                    else navigate(`/vadovas/pranesimai/${p.id}`)
-                  }}
+                  onClick={() => { markAsRead(p.id); navigate(`/vadovas/pranesimai/${p.id}`) }}
                   onMouseEnter={() => onHoverPin?.(p)}
                   onMouseLeave={() => onHoverPin?.(null)}
                   sx={{
                     cursor: 'pointer',
-                    ...(innerTab === 1 && {
-                      '& .MuiTableCell-root': { fontWeight: 500 },
-                      ...(p.isNew && { bgcolor: '#FFF8E1', '&:hover': { bgcolor: '#FFF3CD' } }),
+                    ...(groupedView && {
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                      '& td:first-of-type': { borderLeft: '1px solid', borderColor: 'divider', borderRadius: '8px 0 0 8px', pl: '12px' },
+                      '& td:last-of-type':  { borderRight: '1px solid', borderColor: 'divider', borderRadius: '0 8px 8px 0', pr: '12px' },
                     }),
+                    ...(innerTab === 1 && { '& .MuiTableCell-root': { fontWeight: 500 }, ...(p.isNew && { bgcolor: '#FFF8E1' }) }),
                   }}
                 >
                   {innerTab === 0 ? (
                     <>
-                      <TableCell>{p.techObject || '—'}</TableCell>
-                      <TableCell>{p.faultType || '—'}</TableCell>
-                      <TableCell>{p.functionalLocation || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.faultType || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.techObject || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.functionalLocation || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'}</TableCell>
+                      {!groupedView && (
+                        <TableCell sx={cell}>
+                          {(() => { const s = WO_STATUS_MAP[p.workOrderStatus ?? 'backlog']; return <Chip label={s.label} size="small" variant="outlined" sx={{ borderColor: s.color, color: s.color, fontWeight: 600, fontSize: '0.68rem', height: 20 }} /> })()}
+                        </TableCell>
+                      )}
+                      <TableCell sx={cell}>{p.woCompletionDate ?? p.createdDate} {p.createdAt}</TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell>{p.functionalLocation || '—'}</TableCell>
-                      <TableCell>{p.techObject || '—'}</TableCell>
-                      <TableCell>{p.faultType || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.functionalLocation || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.techObject || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.faultType || '—'}</TableCell>
+                      <TableCell sx={cell}>{p.reporter}</TableCell>
+                      <TableCell sx={cell}>{p.createdDate} {p.createdAt}</TableCell>
                     </>
-                  )}
-                  {innerTab === 0 ? (
-                    <TableCell>
-                      <Chip
-                        label={
-                          p.workOrderStatus === 'planned'     ? 'Suplanuotas'  :
-                          p.workOrderStatus === 'in_progress' ? 'Vykdomas'     :
-                          p.workOrderStatus === 'done'        ? 'Užbaigtas'    : 'Nesuplanuotas'
-                        }
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          borderColor:
-                            p.workOrderStatus === 'planned'     ? '#3B82F6' :
-                            p.workOrderStatus === 'in_progress' ? '#F59E0B' :
-                            p.workOrderStatus === 'done'        ? '#43A047' : '#D32F2F',
-                          color:
-                            p.workOrderStatus === 'planned'     ? '#3B82F6' :
-                            p.workOrderStatus === 'in_progress' ? '#F59E0B' :
-                            p.workOrderStatus === 'done'        ? '#43A047' : '#D32F2F',
-                          fontWeight: 600,
-                          fontSize: '0.68rem',
-                          height: 20,
-                        }}
-                      />
-                    </TableCell>
-                  ) : (
-                    <TableCell>{p.reporter}</TableCell>
-                  )}
-                  {innerTab === 0 ? (
-                    <>
-                      <TableCell>{p.woCompletionDate ?? p.createdDate}</TableCell>
-                      <TableCell>{p.createdAt}</TableCell>
-                    </>
-                  ) : (
-                    <TableCell>{p.createdDate} {p.createdAt}</TableCell>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          )}
+              )
+            }
+
+            const tableHead = (
+              <TableHead>
+                <TableRow>
+                  {WO_COLS.map(({ label, col }) => (
+                    <TableCell key={col} sx={{ fontWeight: 600 }}>
+                      <TableSortLabel active={sortCol === col} direction={sortCol === col ? sortDir : 'asc'} onClick={() => handleSort(col as typeof sortCol)}>
+                        {label}
+                      </TableSortLabel>
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+            )
+
+            if (!groupedView || innerTab !== 0) {
+              return (
+                <Table size="small" sx={{ borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                  {tableHead}
+                  <TableBody>{filtered.map(renderRow)}</TableBody>
+                </Table>
+              )
+            }
+
+            return (
+              <Table size="small" sx={{ borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                {tableHead}
+                <TableBody sx={{ bgcolor: 'grey.100' }}>
+                  {STATUS_FILTERS.filter(f => f.key !== 'all').flatMap(f => {
+                    const rows = filtered.filter(p => (p.workOrderStatus ?? 'backlog') === f.key)
+                    if (rows.length === 0) return []
+                    const s = WO_STATUS_MAP[f.key]
+                    return [
+                      <TableRow key={`grp-${f.key}`}>
+                        <TableCell colSpan={WO_COLS.length} sx={{ pt: 2.5, pb: 0.5, border: 'none', bgcolor: 'transparent' }}>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: f.color ?? s?.color }}>
+                              {f.label}
+                            </Typography>
+                            <Typography variant="caption" color="text.disabled">({rows.length})</Typography>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>,
+                      ...rows.map(renderRow),
+                    ]
+                  })}
+                </TableBody>
+              </Table>
+            )
+          })()}
         </Box>
       ) : (
         <Box sx={{ flex: 1, overflowY: 'auto', px: 2, pt: 2 }}>

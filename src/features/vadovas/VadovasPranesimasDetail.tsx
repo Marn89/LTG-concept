@@ -34,6 +34,13 @@ const MATERIALS = [
   'Šviesaforo medžiagos',
 ]
 
+function formatElapsed(secs: number) {
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 function FieldRow({ label, value }: { label: string; value: string }) {
   return (
     <Box sx={{ px: 2, py: 1 }}>
@@ -52,7 +59,7 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
   const { id: paramId } = useParams()
   const id = propId ?? paramId
   const close = onClose ?? (() => navigate(-1))
-  const { pranesimai, addPranesimas, removePranesimas } = usePranesimai()
+  const { pranesimai, addPranesimas, removePranesimas, updateWorkOrderStatus } = usePranesimai()
   const p = pranesimai.find(n => n.id === id)
 
   const isWorkOrder = p?.pinType === 'work_order'
@@ -158,6 +165,26 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
                 <FieldRow label="Atlikimo data" value={woDate || '—'} />
                 <FieldRow label="Medžiagos" value={woMaterials.join(', ') || '—'} />
                 <FieldRow label="Operacija (ką atlikti)" value={woOperation || '—'} />
+                {p.completionReport && (
+                  <>
+                    <Divider sx={{ my: 1 }} />
+                    <Box sx={{ px: 2, py: 0.5 }}>
+                      <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: '#8B5CF6' }}>
+                        Darbuotojo ataskaita
+                      </Typography>
+                    </Box>
+                    <FieldRow label="Atlikimo data" value={p.completionReport.completedAt} />
+                    <FieldRow label="Sugaištas laikas" value={formatElapsed(p.completionReport.elapsed)} />
+                    <FieldRow label="Gedimo priežastis" value={p.completionReport.faultReason || '—'} />
+                    <FieldRow label="Naudotos medžiagos" value={p.completionReport.materialsYn === 'Taip' ? `${p.completionReport.material} – ${p.completionReport.amount}` : 'Ne'} />
+                    {p.completionReport.notes ? (
+                      <Box sx={{ px: 2, py: 1 }}>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>Pastabos</Typography>
+                        <Typography variant="body2">{p.completionReport.notes}</Typography>
+                      </Box>
+                    ) : null}
+                  </>
+                )}
               </>
             ) : (
               <Box sx={{ px: 2, py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -257,6 +284,13 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
         )}
       </Box>
 
+      {isWorkOrder && p?.workOrderStatus === 'pending_approval' && (
+        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button variant="contained" fullWidth onClick={() => { updateWorkOrderStatus(id!, 'done'); close() }}>
+            Patvirtinti
+          </Button>
+        </Box>
+      )}
       {!isWorkOrder && (
         <Stack spacing={1} sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
           <Button variant="contained" fullWidth onClick={() => {

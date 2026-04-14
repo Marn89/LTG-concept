@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { NOW } from '../utils/now'
 import { useLocation } from 'react-router-dom'
 import {
   Box, Typography, TextField, IconButton, Stack, Divider,
@@ -51,7 +52,7 @@ export function CommentPanel() {
 
   const update = (next: Comment[]) => { setComments(next); persist(next) }
 
-  const now = () => new Date().toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' })
+  const now = () => NOW.toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' })
 
   const visible = comments.filter(c => c.path === pathname)
 

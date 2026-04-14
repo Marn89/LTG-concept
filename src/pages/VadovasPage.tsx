@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import { Box, Dialog, Snackbar, Alert } from '@mui/material'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useParams, useNavigate } from 'react-router-dom'
 import { PranesimuValdymasTab } from '../features/vadovas/PranesimuValdymasTab'
 import { VadovasPranesimasDetail } from '../features/vadovas/VadovasPranesimasDetail'
 import { usePranesimai, type Pranesimas } from '../features/darbuotojas/PranesiamaiContext'
@@ -19,10 +19,11 @@ function toPin(p: Pranesimas) {
 
 export function VadovasPage() {
   const { pranesimai } = usePranesimai()
+  const navigate = useNavigate()
+  const { id: selectedPranesimasId } = useParams<{ id?: string }>()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const { viewMode, showMap, setShowMap } = useOutletContext<{ viewMode: VadovasViewMode; showMap: boolean; setShowMap: (v: boolean) => void }>()
   const [showNotifications, setShowNotifications] = useState(true)
-  const [selectedPranesimasId, setSelectedPranesimasId] = useState<string | null>(null)
   const [toast, setToast] = useState(false)
   const [tabResetKey, setTabResetKey] = useState(0)
   const filteredRef = useRef<Pranesimas[]>([])
@@ -59,7 +60,6 @@ export function VadovasPage() {
           showNotifications={showNotifications}
           onToggleNotifications={handleToggleNotifications}
           onFilteredChange={handleFilteredChange}
-          onSelectPranesimas={id => setSelectedPranesimasId(id)}
           onHoverPin={p => iframeRef.current?.contentWindow?.postMessage(
             { type: 'HIGHLIGHT_PIN', lat: p?.location.lat ?? null, lng: p?.location.lng ?? null }, '*'
           )}
@@ -67,7 +67,7 @@ export function VadovasPage() {
       </Box>
       <Dialog
         open={!!selectedPranesimasId}
-        onClose={() => setSelectedPranesimasId(null)}
+        onClose={() => navigate('/vadovas')}
         maxWidth="sm"
         fullWidth
         PaperProps={{ sx: { borderRadius: '8px', height: '80vh', display: 'flex', flexDirection: 'column' } }}
@@ -75,8 +75,8 @@ export function VadovasPage() {
         {selectedPranesimasId && (
           <VadovasPranesimasDetail
             id={selectedPranesimasId}
-            onClose={() => setSelectedPranesimasId(null)}
-            onConfirm={() => { setSelectedPranesimasId(null); setToast(true) }}
+            onClose={() => navigate('/vadovas')}
+            onConfirm={() => { navigate('/vadovas'); setToast(true) }}
           />
         )}
       </Dialog>
