@@ -14,11 +14,13 @@ import { PranesimasDetailPage } from './pages/PranesimasDetailPage'
 import { TechObjectTypePage } from './pages/TechObjectTypePage'
 import { TechObjectItemPage } from './pages/TechObjectItemPage'
 import { FaultTypePage } from './pages/FaultTypePage'
+import { PlanuotojasPage } from './pages/PlanuotojasPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
+      <Route path="/planuotojas" element={<PlanuotojasPage />} />
       <Route path="/darbuotojas" element={<Navigate to="/darbuotojas/mano-uzduotys" replace />} />
       <Route path="/darbuotojas/mano-uzduotys" element={<DarbuotojasPage />} />
       <Route path="/darbuotojas/pranesimai" element={<DarbuotojasPage />} />
