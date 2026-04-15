@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
-  Stack, Typography, Select, MenuItem, ToggleButton, ToggleButtonGroup, FormControl, InputLabel,
+  Stack, Typography, Select, MenuItem, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, TextField,
 } from '@mui/material'
 
 const UNITS = [
@@ -29,6 +29,7 @@ export function RecurrencePicker({ onChange }: Props) {
   const [unit, setUnit] = useState<string>('WEEKLY')
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [dayOfMonth, setDayOfMonth] = useState<number | ''>('')
+  const [until, setUntil] = useState<string>('')
 
   const isWeekly = unit === 'WEEKLY'
   const isMonthly = unit === 'MONTHLY' || unit === 'YEARLY'
@@ -38,8 +39,9 @@ export function RecurrencePicker({ onChange }: Props) {
     if (interval > 1) rrule += `;INTERVAL=${interval}`
     if (isWeekly && selectedDay) rrule += `;BYDAY=${selectedDay}`
     if (isMonthly && dayOfMonth !== '') rrule += `;BYMONTHDAY=${dayOfMonth}`
+    if (until) rrule += `;UNTIL=${until.replace(/-/g, '')}T000000Z`
     onChange(rrule)
-  }, [interval, unit, selectedDay, dayOfMonth])
+  }, [interval, unit, selectedDay, dayOfMonth, until])
 
   const handleUnitChange = (v: string) => {
     setUnit(v)
@@ -128,6 +130,15 @@ export function RecurrencePicker({ onChange }: Props) {
           </Select>
         </FormControl>
       )}
+
+      <TextField
+        label="Darbo pradžia"
+        type="date"
+        size="small"
+        value={until}
+        onChange={e => setUntil(e.target.value)}
+        slotProps={{ inputLabel: { shrink: true } }}
+      />
 
     </Stack>
   )
