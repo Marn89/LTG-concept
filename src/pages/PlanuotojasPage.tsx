@@ -227,6 +227,7 @@ export function PlanuotojasPage() {
   const [darbas, setDarbas] = useState<string | null>(null)
   const [rrule, setRrule] = useState<string | null>(null)
   const [komanda, setKomanda] = useState<string[]>([])
+  const [vyresnysis, setVyresnysis] = useState<string | null>(null)
   const [medziagos, setMedziagos] = useState<string[]>([])
 
   const allLokacijos = Object.values(LOKACIJOS_BY_MEISTRIJA).flat()
@@ -248,6 +249,7 @@ export function PlanuotojasPage() {
     setDarbas(null)
     setRrule(null)
     setKomanda([])
+    setVyresnysis(null)
     setMedziagos([])
   }
 
@@ -403,6 +405,40 @@ export function PlanuotojasPage() {
 
               </Stack>
 
+              <Divider />
+
+              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
+                Darbuotojai
+              </Typography>
+
+              <Autocomplete
+                multiple
+                disableCloseOnSelect
+                options={KOMANDA}
+                value={komanda}
+                onChange={(_, v) => setKomanda(v)}
+                renderTags={() => null}
+                slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
+                renderInput={params => <TextField {...params} label="Pasirinkti darbuotojus" size="small" />}
+              />
+              {komanda.length > 0 && (
+                <Stack direction="row" flexWrap="wrap" gap={0.5}>
+                  {komanda.map(k => (
+                    <Chip
+                      key={k}
+                      label={vyresnysis === k ? `⭐ ${k}` : k}
+                      size="small"
+                      color={vyresnysis === k ? 'primary' : 'default'}
+                      variant={vyresnysis === k ? 'filled' : 'outlined'}
+                      onClick={() => setVyresnysis(vyresnysis === k ? null : k)}
+                      onDelete={() => {
+                        setKomanda(komanda.filter(v => v !== k))
+                        if (vyresnysis === k) setVyresnysis(null)
+                      }}
+                    />
+                  ))}
+                </Stack>
+              )}
 
             </Stack>
           </Box>
