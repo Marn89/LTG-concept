@@ -99,7 +99,7 @@ const STATUS_FILTERS = [
 type StatusFilter = typeof STATUS_FILTERS[number]['key']
 
 export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotifications, onToggleNotifications, onFilteredChange, onHoverPin, onSelectPranesimas }: { viewMode: VadovasViewMode; showMap: boolean; onToggleMap: () => void; showNotifications: boolean; onToggleNotifications: () => void; onFilteredChange?: (items: Pranesimas[]) => void; onHoverPin?: (p: Pranesimas | null) => void; onSelectPranesimas?: (id: string) => void }) {
-  const { pranesimai, markAsRead } = usePranesimai()
+  const { pranesimai, markAsRead, updateWorkOrder } = usePranesimai()
   const navigate = useNavigate()
   const [innerTab, setInnerTab] = useState(() => Number(localStorage.getItem('vadovas_innerTab') ?? 0))
 
@@ -139,7 +139,7 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
       case 'faultType':          return p.faultType || ''
       case 'functionalLocation': return p.functionalLocation || ''
       case 'workOrderStatus':    return p.workOrderStatus ?? ''
-      case 'woType':             return p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'
+      case 'woType':             { const t = p.woType ?? (p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'); return t === 'Planinis' ? 'Kas 1 savaitė' : t }
       case 'reporter':           return p.reporter
       case 'createdAt':          return p.createdAt
       case 'createdDate':        return p.createdDate + p.createdAt
@@ -355,17 +355,16 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
 
             const WO_COLS = innerTab === 0
               ? [
-                  { label: 'Gedimo tipas',                col: 'faultType'          },
+                  { label: 'Darbo užsakymas',             col: 'faultType'          },
                   { label: 'Techninis objektas',          col: 'techObject'         },
-                  { label: 'Lokacija',                    col: 'functionalLocation' },
-                  { label: 'WO tipas',                    col: 'woType'             },
+                  { label: 'Periodiškumas',               col: 'woType'             },
+                  { label: 'Kelias',                      col: 'kelias'             },
                   ...(!groupedView ? [{ label: 'Statusas', col: 'workOrderStatus' }] : []),
                   { label: 'Planuojamas darbo atlikimas', col: 'createdDate'        },
                 ]
               : [
-                  { label: 'Lokacija',           col: 'functionalLocation' },
                   { label: 'Techninis objektas', col: 'techObject'         },
-                  { label: 'Gedimo tipas',       col: 'faultType'          },
+                  { label: 'Darbo užsakymas',    col: 'faultType'          },
                   { label: 'Pranešėjas',         col: 'reporter'           },
                   { label: 'Pranešimo laikas',   col: 'createdDate'        },
                 ]
@@ -402,18 +401,38 @@ export function PranesimuValdymasTab({ viewMode, showMap, onToggleMap, showNotif
                     <>
                       <TableCell sx={cell}>{p.faultType || '—'}</TableCell>
                       <TableCell sx={cell}>{p.techObject || '—'}</TableCell>
-                      <TableCell sx={cell}>{p.functionalLocation || '—'}</TableCell>
-                      <TableCell sx={cell}>{p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'}</TableCell>
+                      <TableCell sx={cell}>{(() => { const t = p.woType ?? (p.workOrderStatus === 'backlog' ? 'Neplaninis' : 'Planinis'); return t === 'Planinis' ? 'Kas 1 savaitė' : t })()}</TableCell>
+                      <TableCell sx={cell}>{p.kelias || '—'}</TableCell>
                       {!groupedView && (
                         <TableCell sx={cell}>
-                          {(() => { const s = WO_STATUS_MAP[p.workOrderStatus ?? 'backlog']; return <Chip label={s.label} size="small" variant="outlined" sx={{ borderColor: s.color, color: s.color, fontWeight: 600, fontSize: '0.68rem', height: 20 }} /> })()}
+                          {(() => {
+                            const s = WO_STATUS_MAP[p.workOrderStatus ?? 'backlog']
+                            const isPlanned = p.workOrderStatus === 'planned'
+                            return (
+                              <Chip
+                                label={s.label}
+                                size="small"
+                                variant="outlined"
+                                onClick={isPlanned ? (e) => {
+                                  e.stopPropagation()
+                                  const base = new Date(p.woCompletionDate ?? p.createdDate)
+                                  base.setDate(base.getDate() + 7)
+                                  const nextDate = base.toISOString().slice(0, 10)
+                                  updateWorkOrder(p.id, {
+                                    createdDate: nextDate,
+                                    woHistory: [...(p.woHistory ?? []), { date: '2026-05-01', duration: '3 val. 15 min.', senior: p.woSeniorName ?? '—' }],
+                                  })
+                                } : undefined}
+                                sx={{ borderColor: s.color, color: s.color, fontWeight: 600, fontSize: '0.68rem', height: 20, ...(isPlanned && { cursor: 'pointer' }) }}
+                              />
+                            )
+                          })()}
                         </TableCell>
                       )}
                       <TableCell sx={cell}>{p.woCompletionDate ?? p.createdDate} {p.createdAt}</TableCell>
                     </>
                   ) : (
                     <>
-                      <TableCell sx={cell}>{p.functionalLocation || '—'}</TableCell>
                       <TableCell sx={cell}>{p.techObject || '—'}</TableCell>
                       <TableCell sx={cell}>{p.faultType || '—'}</TableCell>
                       <TableCell sx={cell}>{p.reporter}</TableCell>

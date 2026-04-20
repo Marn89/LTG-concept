@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
   Box, Typography, Stack, Button, Divider,
   Chip, Autocomplete, TextField, IconButton, Breadcrumbs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+  Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl, Collapse,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddIcon from '@mui/icons-material/Add'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
@@ -13,6 +16,7 @@ import { ROKISKIS_TOP_LEVEL, ROKISKIS_BY_PARENT, type TechObject } from '../data
 import { RecurrencePicker } from '../components/RecurrencePicker'
 import { StationMap } from '../components/StationMap'
 import { LOKACIJA_COORDS } from '../data/rokiskisCoords'
+import { IESMAI_SUTEPIMAS, IESMAI_SUTEPIMAS_GROUPED } from '../data/iesmaiSutepimas'
 const POPPER_PROPS = {
   placement: 'bottom-start' as const,
   modifiers: [{ name: 'flip', enabled: false }],
@@ -162,13 +166,13 @@ const MEISTRIJOS = [
 interface Lokacija { label: string; code: string; group: string }
 const LOKACIJOS_BY_MEISTRIJA: Record<string, Lokacija[]> = {
   'Rokiškio meistrija (ATRAMINĖ)': [
-    { label: 'Gustonių geležinkelio stotis', code: 'LG-L08-000GUS', group: 'Stotys' },
-    { label: 'Kupiškio geležinkelio stotis', code: 'LG-L08-000KPS', group: 'Stotys' },
-    { label: 'Panevėžio geležinkelio stotis', code: 'LG-L08-000PNE', group: 'Stotys' },
-    { label: 'Rokiškio geležinkelio stotis', code: 'LG-L08-000RKS', group: 'Stotys' },
-    { label: 'Šeduvos geležinkelio stotis', code: 'LG-L08-000SDV', group: 'Stotys' },
-    { label: 'Skapiškio geležinkelio stotis', code: 'LG-L08-000SKA', group: 'Stotys' },
-    { label: 'Subačiaus geležinkelio stotis', code: 'LG-L08-000SUB', group: 'Stotys' },
+    { label: 'Gustonių gel. stotis', code: 'LG-L08-000GUS', group: 'Stotys' },
+    { label: 'Kupiškio gel. stotis', code: 'LG-L08-000KPS', group: 'Stotys' },
+    { label: 'Panevėžio gel. stotis', code: 'LG-L08-000PNE', group: 'Stotys' },
+    { label: 'Rokiškio gel. stotis', code: 'LG-L08-000RKS', group: 'Stotys' },
+    { label: 'Šeduvos gel. stotis', code: 'LG-L08-000SDV', group: 'Stotys' },
+    { label: 'Skapiškio gel. stotis', code: 'LG-L08-000SKA', group: 'Stotys' },
+    { label: 'Subačiaus gel. stotis', code: 'LG-L08-000SUB', group: 'Stotys' },
     { label: 'Tarpstotis Gustonys-Panevėžys', code: 'LG-L08-GUSPNE', group: 'Tarpstočiai' },
     { label: 'Tarpstotis Kupiškis-Skapiškis', code: 'LG-L08-KPSSKA', group: 'Tarpstočiai' },
     { label: 'Tarpstotis Panevėžys-Subačius', code: 'LG-L08-PNESUB', group: 'Tarpstočiai' },
@@ -195,10 +199,10 @@ const MEDZIAGOS = [
 interface PlaninisDarbas {
   id: number
   darbas: string | null
-  lokacija: Lokacija | null
-  grupe: TechObject | null
+  startDate: string
   objektai: TechObject[]
   rrule: string | null
+  rrule2: string | null
 }
 
 function formatRrule(rrule: string | null): string {
@@ -215,10 +219,42 @@ function formatRrule(rrule: string | null): string {
   return interval === 1 ? `Kas ${sing}` : `Kas ${interval} ${plur}`
 }
 
+function spreadCoords(center: [number, number], count: number): [number, number][] {
+  const [lat, lon] = center
+  const spread = 0.03
+  const cols = Math.ceil(Math.sqrt(count * 1.4))
+  return Array.from({ length: count }, (_, i) => {
+    const row = Math.floor(i / cols)
+    const col = i % cols
+    const jLat = ((i * 7919) % 97) / 97 * 0.003 - 0.0015
+    const jLon = ((i * 6271) % 89) / 89 * 0.003 - 0.0015
+    return [
+      lat + (row - Math.floor(cols / 2)) * (spread / cols) * 2 + jLat,
+      lon + (col - Math.floor(cols / 2)) * (spread / cols) * 2 + jLon,
+    ] as [number, number]
+  })
+}
+
+const MEISTRIJA_COORDS: Record<string, [number, number]> = {
+  'Šiaulių meistrija':           [55.9333, 23.3167],
+  'Kužių meistrija':             [55.8489, 23.1667],
+  'Zoknių meistrija':            [55.9947, 23.3556],
+  'Akmenės meistrija':           [56.2500, 22.7500],
+  'Bugenių meistrija':           [55.9175, 23.0342],
+  'Radviliškio 3-oji meistrija': [55.8167, 23.5500],
+  'Radviliškio 2-oji meistrija': [55.8167, 23.5500],
+  'Panevėžio meistrija':         [55.7333, 24.3667],
+  'Šeduvos meistrija':           [55.7525, 23.7603],
+  'Rokiškio meistrija':          [55.9667, 25.5833],
+}
+
 export function PlanuotojasPage() {
-  const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { planId } = useParams<{ planId: string }>()
+  const open = location.pathname === '/planuotojas/naujas'
   const [planiniai, setPlaniniai] = useState<PlaninisDarbas[]>([])
-  const [selected, setSelected] = useState<PlaninisDarbas | null>(null)
+  const selected = planId ? (planiniai.find(p => String(p.id) === planId) ?? null) : null
   const [prieziura, setPrieziura] = useState<{ label: string; group: string } | null>(null)
   const [lokacija, setLokacija] = useState<Lokacija | null>(null)
   const [grupe, setGrupe] = useState<TechObject | null>(null)
@@ -226,6 +262,35 @@ export function PlanuotojasPage() {
   const [showObjektai, setShowObjektai] = useState(false)
   const [darbas, setDarbas] = useState<string | null>(null)
   const [rrule, setRrule] = useState<string | null>(null)
+  const [rrule2, setRrule2] = useState<string | null>(null)
+  const [editingPlanId, setEditingPlanId] = useState<number | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined)
+  const [mapZoom, setMapZoom] = useState(16)
+  const [hoveredCode, setHoveredCode] = useState<string | null>(null)
+  const [meistriaMapItems, setMeistriaMapItems] = useState<TechObject[]>([])
+  const [meistriaCoords, setMeistriaCoords] = useState<Record<string, [number, number]>>({})
+  const toggleGroup = (g: string) => {
+    setExpandedGroups(prev => { const s = new Set(prev); s.has(g) ? s.delete(g) : s.add(g); return s })
+    const cityCenter = MEISTRIJA_COORDS[g]
+    if (cityCenter) {
+      setMapCenter(cityCenter)
+      setMapZoom(13)
+      const group = IESMAI_SUTEPIMAS_GROUPED.find(gr => gr.group === g)
+      if (group) {
+        const positions = spreadCoords(cityCenter, group.items.length)
+        const coords: Record<string, [number, number]> = {}
+        group.items.forEach((item, i) => { coords[item.code] = positions[i] })
+        setMeistriaMapItems(group.items)
+        setMeistriaCoords(coords)
+      }
+    }
+  }
+  const [lanksti1, setLanksti1] = useState(false)
+  const [lanksti2, setLanksti2] = useState(false)
+  const [lankstiDays1, setLankstiDays1] = useState<number | ''>('')
+  const [lankstiDays2, setLankstiDays2] = useState<number | ''>('')
+  const [startDate, setStartDate] = useState<string>('')
   const [komanda, setKomanda] = useState<string[]>([])
   const [vyresnysis, setVyresnysis] = useState<string | null>(null)
   const [medziagos, setMedziagos] = useState<string[]>([])
@@ -248,32 +313,55 @@ export function PlanuotojasPage() {
     setElementas([])
     setDarbas(null)
     setRrule(null)
+    setRrule2(null)
+    setLanksti1(false)
+    setLanksti2(false)
+    setLankstiDays1('')
+    setLankstiDays2('')
+    setStartDate('')
     setKomanda([])
     setVyresnysis(null)
     setMedziagos([])
   }
 
-  const handleClose = () => { setOpen(false); resetForm() }
+  const handleClose = () => { navigate('/planuotojas'); resetForm(); setEditingPlanId(null) }
+
+  const handleEdit = (p: PlaninisDarbas) => {
+    setDarbas(p.darbas)
+    setStartDate(p.startDate)
+    setElementas(p.objektai)
+    setRrule(p.rrule)
+    setRrule2(p.rrule2)
+    setEditingPlanId(p.id)
+    navigate('/planuotojas/naujas')
+  }
 
   const handleSave = () => {
-    setPlaniniai(prev => [...prev, {
-      id: Date.now(),
-      darbas,
-      lokacija,
-      grupe,
-      objektai: elementas,
-      rrule,
-    }])
-    setOpen(false)
+    if (editingPlanId !== null) {
+      setPlaniniai(prev => prev.map(p => p.id === editingPlanId ? { ...p, darbas, startDate, objektai: elementas, rrule, rrule2 } : p))
+    } else {
+      setPlaniniai(prev => [...prev, { id: Date.now(), darbas, startDate, objektai: elementas, rrule, rrule2 }])
+    }
+    navigate('/planuotojas')
     resetForm()
+    setEditingPlanId(null)
   }
 
   return (
-    <WebAppShell>
+    <WebAppShell headerActions={
+      <IconButton size="small" onClick={() => {
+        const QUICK_OPTIONS = ['Periodinė iešmų patikra','MPC spintų patikra','Periodinė Šviesaforų patikra','GS RES priežiūra','SĮ kabelių patikra','NMŠ patikra']
+        const darbas = QUICK_OPTIONS[Math.floor(Math.random() * QUICK_OPTIONS.length)]
+        const today = new Date().toISOString().split('T')[0]
+        setPlaniniai(prev => [...prev, { id: Date.now(), darbas, startDate: today, objektai: IESMAI_SUTEPIMAS, rrule: 'FREQ=WEEKLY', rrule2: null }])
+      }}>
+        <AddIcon fontSize="small" />
+      </IconButton>
+    }>
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={700}>Planiniai darbai</Typography>
-          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => setOpen(true)}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => navigate('/planuotojas/naujas')}>
             Sukurti planinį darbą
           </Button>
         </Stack>
@@ -289,26 +377,22 @@ export function PlanuotojasPage() {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'grey.50' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Darbas</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Lokacija</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Grupė</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Pradžia</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Objektai</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Dažnumas</TableCell>
+                  <TableCell />
                 </TableRow>
               </TableHead>
               <TableBody>
                 {planiniai.map(p => (
-                  <TableRow key={p.id} hover sx={{ cursor: 'pointer' }} onClick={() => setSelected(p)}>
+                  <TableRow key={p.id} hover>
                     <TableCell>{p.darbas ?? '—'}</TableCell>
-                    <TableCell>{p.lokacija ? `${p.lokacija.label} (${p.lokacija.code})` : '—'}</TableCell>
-                    <TableCell>{p.grupe?.name ?? '—'}</TableCell>
-                    <TableCell>
-                      {p.objektai.length === 0
-                        ? '—'
-                        : p.objektai.length === 1
-                          ? p.objektai[0].name
-                          : `${p.objektai[0].name} +${p.objektai.length - 1}`}
-                    </TableCell>
+                    <TableCell>{p.startDate || '—'}</TableCell>
+                    <TableCell>{p.objektai.length > 0 ? `${p.objektai.length} obj.` : '—'}</TableCell>
                     <TableCell>{formatRrule(p.rrule)}</TableCell>
+                    <TableCell align="right">
+                      <Button size="small" onClick={() => handleEdit(p)}>Peržiūrėti</Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -320,9 +404,9 @@ export function PlanuotojasPage() {
       {open && (
       <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, bgcolor: 'grey.100', display: 'flex', overflow: 'hidden' }}>
         <Stack direction="row" sx={{ flex: 1, overflow: 'hidden' }}>
-        <Box sx={{ width: 560, flexShrink: 0, bgcolor: 'background.paper', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>Naujas planinis darbas</Typography>
+            <Typography variant="subtitle1" fontWeight={700}>{editingPlanId !== null ? 'Redaguoti planinį darbą' : 'Naujas planinis darbas'}</Typography>
             <IconButton size="small" onClick={handleClose}><CloseIcon fontSize="small" /></IconButton>
           </Stack>
           <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
@@ -333,112 +417,85 @@ export function PlanuotojasPage() {
               </Typography>
 
               <Autocomplete
-                options={['Iešmų patikrinimas', 'Iešmų patepimas', 'AB vald. įrang patikra', 'AB įrenginių patikra', 'Pervažų SĮ patikra']}
+                options={[
+                  'Periodinė iešmų patikra',
+                  'MPC spintų patikra',
+                  'Periodinė Šviesaforų patikra',
+                  'GS RES priežiūra',
+                  'SĮ kabelių patikra',
+                  'NMŠ patikra',
+                  'STAB vald įrang patikra',
+                ]}
                 value={darbas}
-                onChange={(_, v) => setDarbas(v)}
+                onChange={(_, v) => {
+                  setDarbas(v)
+                  setElementas(v === 'Periodinė iešmų patikra' ? IESMAI_SUTEPIMAS : [])
+                }}
                 slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
                 renderInput={params => <TextField {...params} label="Pasirinkite darbą" size="small" />}
               />
 
-              <Divider />
-
-              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Darbų atlikimo dažnumas
-              </Typography>
-
-              <RecurrencePicker onChange={setRrule} />
-
-              <Divider />
-
-              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Lokacijos informacija
-              </Typography>
-
-              <Stack spacing={2}>
-                <Stack spacing={2}>
-                  <Autocomplete
-                    options={MEISTRIJOS}
-                    groupBy={o => o.group}
-                    getOptionLabel={o => o.label}
-                    value={prieziura}
-                    onChange={(_, v) => { setPrieziura(v); setLokacija(null); setGrupe(null); setElementas([]) }}
-                    slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
-                    renderInput={params => <TextField {...params} label="Pasirinkti meistriją" size="small" />}
-                  />
-                  <Autocomplete
-                    options={allLokacijos}
-                    disabled={!prieziura}
-                    getOptionLabel={o => `${o.label} (${o.code})`}
-                    groupBy={o => o.group}
-                    value={lokacija}
-                    onChange={(_, v) => { setLokacija(v); setGrupe(null); setElementas([]) }}
-                    slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
-                    renderInput={params => <TextField {...params} label="Pasirinkti lokaciją" size="small" />}
-                  />
-                  <Autocomplete
-                    options={availableGrupes}
-                    disabled={!lokacija}
-                    getOptionLabel={o => `${o.name} (${o.code})`}
-                    value={grupe}
-                    onChange={(_, v) => {
-                      setGrupe(v)
-                      setShowObjektai(false)
-                      const children = v ? (ROKISKIS_BY_PARENT[v.code] ?? []) : []
-                      setElementas(v?.code === 'LG-L08-000RKS-IESA' ? children : [])
-                    }}
-                    slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
-                    renderInput={params => (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <TextField {...params} label="Pasirinkti objekto grupę" size="small" sx={{ flex: 1 }} />
-                        <IconButton
-                          size="small"
-                          disabled={!grupe || grupeItems.length === 0}
-                          onClick={() => setShowObjektai(v => !v)}
-                          sx={{ border: 1, borderColor: showObjektai ? 'primary.main' : 'divider', borderRadius: 1, color: showObjektai ? 'primary.main' : 'text.secondary', flexShrink: 0 }}
-                        >
-                          <TableRowsOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    )}
-                  />
-                </Stack>
-
-              </Stack>
-
-              <Divider />
-
-              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Darbuotojai
-              </Typography>
-
-              <Autocomplete
-                multiple
-                disableCloseOnSelect
-                options={KOMANDA}
-                value={komanda}
-                onChange={(_, v) => setKomanda(v)}
-                renderTags={() => null}
-                slotProps={{ popper: POPPER_PROPS }} ListboxProps={LISTBOX_PROPS}
-                renderInput={params => <TextField {...params} label="Pasirinkti darbuotojus" size="small" />}
+              <TextField
+                label="Darbo pradžia"
+                type="date"
+                size="small"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true }, htmlInput: { onClick: (e: React.MouseEvent<HTMLInputElement>) => (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.() } }}
+                sx={{
+                  '& input::-webkit-datetime-edit-fields-wrapper': { color: startDate ? 'text.primary' : 'text.secondary' },
+                  '& input::-webkit-datetime-edit-text': { color: startDate ? 'text.primary' : 'text.secondary' },
+                }}
               />
-              {komanda.length > 0 && (
-                <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                  {komanda.map(k => (
-                    <Chip
-                      key={k}
-                      label={vyresnysis === k ? `⭐ ${k}` : k}
-                      size="small"
-                      color={vyresnysis === k ? 'primary' : 'default'}
-                      variant={vyresnysis === k ? 'filled' : 'outlined'}
-                      onClick={() => setVyresnysis(vyresnysis === k ? null : k)}
-                      onDelete={() => {
-                        setKomanda(komanda.filter(v => v !== k))
-                        if (vyresnysis === k) setVyresnysis(null)
-                      }}
-                    />
-                  ))}
-                </Stack>
+
+              <Divider />
+
+              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
+                {darbas === 'Periodinė iešmų patikra' ? 'Objekto aptarnavimo dažnumas pagrindiniuose keliuose' : 'Darbų atlikimo dažnumas'}
+              </Typography>
+
+              <RecurrencePicker key={`rrule-${editingPlanId}`} initialValue={rrule} onChange={setRrule} />
+              <FormControlLabel
+                control={<Checkbox size="small" checked={lanksti1} onChange={e => { setLanksti1(e.target.checked); if (!e.target.checked) setLankstiDays1('') }} />}
+                label={<Typography variant="body2">Lanksti darbų atlikimo data</Typography>}
+                sx={{ ml: 0, mt: -1 }}
+              />
+              {lanksti1 && (
+                <FormControl size="small" fullWidth>
+                  <InputLabel>Nukrypimo riba</InputLabel>
+                  <Select value={lankstiDays1} onChange={e => setLankstiDays1(Number(e.target.value))} label="Nukrypimo riba" MenuProps={{ disablePortal: true, anchorOrigin: { vertical: 'bottom', horizontal: 'left' }, transformOrigin: { vertical: 'top', horizontal: 'left' }, PaperProps: { sx: { maxHeight: 220 } } }}>
+                    {[['±1 diena',1],['±2 dienos',2],['±3 dienos',3],['±4 dienos',4],['±5 dienų',5],['±6 dienų',6],['±7 dienų',7]].map(([label, val]) => (
+                      <MenuItem key={val} value={val}>{label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
+
+              {darbas === 'Periodinė iešmų patikra' && (
+                <>
+                  <Divider />
+                  <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
+                    Objekto aptarnavimo dažnumas atvykimo keliuose
+                  </Typography>
+                  <RecurrencePicker key={`rrule2-${editingPlanId}`} initialValue={rrule2} onChange={setRrule2} />
+                  <FormControlLabel
+                    control={<Checkbox size="small" checked={lanksti2} onChange={e => { setLanksti2(e.target.checked); if (!e.target.checked) setLankstiDays2('') }} />}
+                    label={<Typography variant="body2">Lanksti darbų atlikimo data</Typography>}
+                    sx={{ ml: 0, mt: -1 }}
+                  />
+                  {lanksti2 && (
+                    <FormControl size="small" fullWidth>
+                      <InputLabel>Nukrypimo riba</InputLabel>
+                      <Select value={lankstiDays2} onChange={e => setLankstiDays2(Number(e.target.value))} label="Nukrypimo riba" MenuProps={{ disablePortal: true, anchorOrigin: { vertical: 'bottom', horizontal: 'left' }, transformOrigin: { vertical: 'top', horizontal: 'left' }, PaperProps: { sx: { maxHeight: 220 } } }}>
+                        {[['±1 diena',1],['±2 dienos',2],['±3 dienos',3],['±4 dienos',4],['±5 dienų',5],['±6 dienų',6],['±7 dienų',7]].map(([label, val]) => (
+                          <MenuItem key={val} value={val}>{label}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                </>
+              )}
+
 
             </Stack>
           </Box>
@@ -450,8 +507,83 @@ export function PlanuotojasPage() {
           </Box>
         </Box>
 
+        <Box sx={{ flex: 1, borderLeft: 1, borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'grey.50' }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+            <Box>
+              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
+                Aptarnaujami objektai
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                Šiaulių regiono kelių priežiūra
+              </Typography>
+            </Box>
+            {elementas.length > 0 && (
+              <Typography variant="caption" color="text.secondary">({elementas.length})</Typography>
+            )}
+          </Stack>
+          <Box sx={{ flex: 1, overflowY: 'auto' }}>
+            {elementas.length === 0 ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
+                <Typography variant="caption" color="text.disabled" textAlign="center">Nepasirinkta objektų</Typography>
+              </Stack>
+            ) : (
+              IESMAI_SUTEPIMAS_GROUPED.map(({ group, items }) => {
+                if (items.length === 0) return null
+                const checkedCount = items.filter(o => elementas.some(e => e.code === o.code)).length
+                const isOpen = expandedGroups.has(group)
+                return (
+                  <Box key={group}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      onClick={() => toggleGroup(group)}
+                      sx={{ px: 2, py: 1.5, bgcolor: 'grey.50', borderBottom: 1, borderColor: 'divider', cursor: 'pointer', '&:hover': { bgcolor: 'grey.100' } }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={0.75}>
+                        <Typography variant="caption" fontWeight={700} color="text.secondary">{group}</Typography>
+                        <Typography variant="caption" color="text.secondary">({checkedCount}/{items.length})</Typography>
+                      </Stack>
+                      <ExpandMoreIcon sx={{ fontSize: 16, color: 'text.disabled', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    </Stack>
+                    <Collapse in={isOpen}>
+                      {items.map((o, idx) => {
+                        const checked = elementas.some(e => e.code === o.code)
+                        const isPagrindinis = idx % 2 === 0
+                        return (
+                          <Stack
+                            key={o.code}
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            sx={{ px: 2, py: 0.75, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                            onClick={() => setElementas(prev => checked ? prev.filter(e => e.code !== o.code) : [...prev, o])}
+                            onMouseEnter={() => setHoveredCode(o.code)}
+                            onMouseLeave={() => setHoveredCode(null)}
+                          >
+                            <Checkbox size="small" checked={checked} disableRipple sx={{ p: 0, flexShrink: 0 }} />
+                            <Stack direction="row" alignItems="center" spacing={0.75}>
+                              <Typography variant="body2" sx={{ lineHeight: 1.3 }}>{o.name}</Typography>
+                              <Chip
+                                label={isPagrindinis ? 'Pagrindinis kelias' : 'Atvykimo kelias'}
+                                size="small"
+                                color={isPagrindinis ? 'primary' : 'default'}
+                                sx={{ height: 16, fontSize: '0.6rem', '& .MuiChip-label': { px: 0.75 } }}
+                              />
+                            </Stack>
+                          </Stack>
+                        )
+                      })}
+                    </Collapse>
+                  </Box>
+                )
+              })
+            )}
+          </Box>
+        </Box>
+
         {showObjektai && grupe && grupeItems.length > 0 && (
-          <Box sx={{ width: 260, flexShrink: 0, bgcolor: 'background.paper', borderLeft: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ width: 260, flexShrink: 0, bgcolor: 'background.paper', borderLeft: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 1 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
               <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
                 Aptarnaujami objektai
@@ -486,7 +618,14 @@ export function PlanuotojasPage() {
         )}
 
         <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          <StationMap items={grupeItems} selected={elementas} center={lokacija ? LOKACIJA_COORDS[lokacija.code] : undefined} />
+          <StationMap
+            items={meistriaMapItems.length > 0 ? meistriaMapItems : grupeItems}
+            selected={elementas}
+            center={mapCenter ?? (lokacija ? LOKACIJA_COORDS[lokacija.code] : undefined)}
+            zoom={mapZoom}
+            coordsOverride={meistriaCoords}
+            highlightedCode={hoveredCode}
+          />
         </Box>
 
         </Stack>
@@ -497,7 +636,7 @@ export function PlanuotojasPage() {
       <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, bgcolor: 'grey.100', display: 'flex', flexDirection: 'column', alignItems: 'center', px: 4, pt: 3, pb: '48px' }}>
         <Box sx={{ width: '100%', maxWidth: 560, mb: 1.5 }}>
           <Breadcrumbs sx={{ '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}>
-            <Typography variant="caption" color="primary.main" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => setSelected(null)}>
+            <Typography variant="caption" color="primary.main" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate('/planuotojas')}>
               Planiniai darbai
             </Typography>
             <Typography variant="caption" color="text.primary" fontWeight={600}>{selected.darbas ?? 'Planinis darbas'}</Typography>
@@ -506,7 +645,7 @@ export function PlanuotojasPage() {
         <Box sx={{ width: '100%', maxWidth: 560, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 4, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
             <Typography variant="subtitle1" fontWeight={700}>{selected.darbas ?? '—'}</Typography>
-            <IconButton size="small" onClick={() => setSelected(null)}><CloseIcon fontSize="small" /></IconButton>
+            <IconButton size="small" onClick={() => navigate('/planuotojas')}><CloseIcon fontSize="small" /></IconButton>
           </Stack>
           <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
             <Stack spacing={2.5}>
@@ -518,45 +657,40 @@ export function PlanuotojasPage() {
                 <Typography variant="caption" color="text.secondary">Darbas</Typography>
                 <Typography variant="body2">{selected.darbas ?? '—'}</Typography>
               </Stack>
+              <Stack spacing={0.5}>
+                <Typography variant="caption" color="text.secondary">Pradžia</Typography>
+                <Typography variant="body2">{selected.startDate || '—'}</Typography>
+              </Stack>
 
               <Divider />
 
               <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Darbų atlikimo dažnumas
+                Dažnumas
               </Typography>
               <Stack spacing={0.5}>
-                <Typography variant="caption" color="text.secondary">Dažnumas</Typography>
+                <Typography variant="caption" color="text.secondary">Pagrindiniuose keliuose</Typography>
                 <Typography variant="body2">{formatRrule(selected.rrule)}</Typography>
               </Stack>
+              {selected.rrule2 && (
+                <Stack spacing={0.5}>
+                  <Typography variant="caption" color="text.secondary">Atvykimo keliuose</Typography>
+                  <Typography variant="body2">{formatRrule(selected.rrule2)}</Typography>
+                </Stack>
+              )}
 
               <Divider />
 
               <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Lokacijos informacija
+                Aptarnaujami objektai
               </Typography>
               <Stack spacing={0.5}>
-                <Typography variant="caption" color="text.secondary">Lokacija</Typography>
-                <Typography variant="body2">{selected.lokacija ? `${selected.lokacija.label} (${selected.lokacija.code})` : '—'}</Typography>
+                <Typography variant="body2">{selected.objektai.length > 0 ? `${selected.objektai.length} objektai` : '—'}</Typography>
               </Stack>
-              <Stack spacing={0.5}>
-                <Typography variant="caption" color="text.secondary">Grupė</Typography>
-                <Typography variant="body2">{selected.grupe ? `${selected.grupe.name} (${selected.grupe.code})` : '—'}</Typography>
-              </Stack>
-              {selected.objektai.length > 0 && (
-                <Stack spacing={0.5}>
-                  <Typography variant="caption" color="text.secondary">Objektai</Typography>
-                  <Stack direction="row" flexWrap="wrap" gap={0.5}>
-                    {selected.objektai.map(o => (
-                      <Chip key={o.code} label={o.name} size="small" />
-                    ))}
-                  </Stack>
-                </Stack>
-              )}
 
             </Stack>
           </Box>
           <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
-            <Button onClick={() => setSelected(null)}>Uždaryti</Button>
+            <Button onClick={() => navigate('/planuotojas')}>Uždaryti</Button>
           </Box>
         </Box>
       </Box>

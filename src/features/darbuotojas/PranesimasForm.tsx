@@ -49,7 +49,7 @@ export function PranesimasForm({ returnTo = '/darbuotojas/pranesimai', basePath 
   const { addPranesimas } = usePranesimai()
   const { techObject, setTechObject, faultType, setFaultType } = usePranesimasForm()
   const [form, setForm] = useState({
-    functionalLocation: 'Dūseikių geležinkelio stotis',
+    functionalLocation: 'Dūseikių gel. stotis',
     gpsCoordinates:     '55.978232, 22.460330',
     faultType:          '',
     notes:              '',

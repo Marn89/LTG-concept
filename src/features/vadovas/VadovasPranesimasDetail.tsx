@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import {
   Box, Typography, Stack, IconButton, Divider, Button,
-  Select, MenuItem, Chip, TextField, OutlinedInput, InputLabel, FormControl, Tooltip,
+  Select, MenuItem, Chip, TextField, OutlinedInput, InputLabel, FormControl, Tooltip, Tabs, Tab,
+  Table, TableHead, TableBody, TableRow, TableCell,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts'
@@ -10,6 +11,25 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePranesimai } from '../darbuotojas/PranesiamaiContext'
 
 interface Props { id?: string; onClose?: () => void; onConfirm?: () => void }
+
+const TECH_OBJEKTAI = [
+  { name: 'Iešmas Nr.74',  kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.4K',  kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.5',   kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.6K',  kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.7K',  kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.8K',  kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.9K',  kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.10',  kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.11K', kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.12',  kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.13K', kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.14K', kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.15',  kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.20K', kelias: 'Atvykimo' },
+  { name: 'Iešmas Nr.21',  kelias: 'Pagrindinis' },
+  { name: 'Iešmas Nr.22K', kelias: 'Atvykimo' },
+]
 
 const TEAM_MEMBERS = [
   'Algirdas Rimkus', 'Kęstutis Norvaišas', 'Ramūnas Žilinskas',
@@ -59,7 +79,7 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
   const { id: paramId } = useParams()
   const id = propId ?? paramId
   const close = onClose ?? (() => navigate(-1))
-  const { pranesimai, addPranesimas, removePranesimas, updateWorkOrderStatus } = usePranesimai()
+  const { pranesimai, addPranesimas, removePranesimas, updateWorkOrderStatus, updateWorkOrder } = usePranesimai()
   const p = pranesimai.find(n => n.id === id)
 
   const isWorkOrder = p?.pinType === 'work_order'
@@ -94,11 +114,13 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
   const woOperation = p?.woOperation ?? defaultOperation(p)
 
   // Editable form state (for Pranešimai tab)
-  const [selectedNames, setSelectedNames] = useState<string[]>([])
-  const [seniorName, setSeniorName] = useState<string | null>(null)
-  const [completionDate, setCompletionDate] = useState('')
+  const [selectedNames, setSelectedNames] = useState<string[]>(() => p?.woTeam ?? [])
+  const [seniorName, setSeniorName] = useState<string | null>(() => p?.woSeniorName ?? null)
+  const [completionDate, setCompletionDate] = useState(() => p?.woCompletionDate ?? '')
   const [material, setMaterial] = useState('')
   const [operation, setOperation] = useState('')
+  const [jobTime, setJobTime] = useState(() => p?.woJobTime ?? '')
+  const [woTab, setWoTab] = useState(0)
 
   const handleNameChange = (names: string[]) => {
     setSelectedNames(names)
@@ -107,125 +129,196 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderBottom: isWorkOrder ? 0 : 1, borderColor: 'divider' }}>
         <Typography variant="subtitle1" fontWeight={600}>
           {isWorkOrder ? 'Darbo užsakymas' : 'Pranešimas'}
         </Typography>
         <IconButton size="small" onClick={close}><CloseIcon fontSize="small" /></IconButton>
       </Stack>
 
+      {isWorkOrder && (
+        <Tabs value={woTab} onChange={(_, v) => setWoTab(v)} sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 40, px: 1 }}>
+          <Tab label="Užsakymo informacija" sx={{ minHeight: 40, py: 0, fontSize: '0.75rem' }} />
+          <Tab label="Aptarnaujami tech. objektai" sx={{ minHeight: 40, py: 0, fontSize: '0.75rem' }} />
+          <Tab label="Atlikimo istorija" sx={{ minHeight: 40, py: 0, fontSize: '0.75rem' }} />
+        </Tabs>
+      )}
+
       <Box sx={{ flex: 1, overflowY: 'auto' }}>
         {p && (
           <>
-            <FieldRow label="Funkcinė lokacija" value={p.functionalLocation} />
-            <FieldRow label="Techninis objektas" value={p.techObject} />
-            <FieldRow label="Gedimo tipas" value={p.faultType} />
-
-            <Box sx={{ px: 2, py: 1 }}>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>
-                Papildoma informacija
-              </Typography>
-              <Typography variant="body2">{p.notes || '—'}</Typography>
-            </Box>
-
-            <Box sx={{ px: 2, py: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Nuotraukos
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
-                {(p.photos.length > 0 ? p.photos : ['/images/railway-signal-snow.jpg']).map((src, i) => (
-                  <Box key={i} component="img" src={src}
-                    sx={{ width: 80, height: 80, borderRadius: '8px', flexShrink: 0, objectFit: 'cover' }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-
-            <Divider />
-
             {isWorkOrder ? (
               <>
-                <Box sx={{ px: 2, py: 1 }}>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>
-                    Komanda
-                  </Typography>
-                  {p.workOrderStatus === 'backlog' || woTeam.length === 0 ? (
-                    <Typography variant="body2" color="text.disabled">—</Typography>
-                  ) : woTeam.map(name => (
-                    <Stack key={name} direction="row" alignItems="center" spacing={0.5}>
-                      <Typography variant="body2">{name}</Typography>
-                      {name === woSeniorName && (
-                        <Tooltip title="Vyr. Technikas" placement="right">
-                          <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B', cursor: 'default' }} />
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  ))}
-                </Box>
-                <FieldRow label="Atlikimo data" value={woDate || '—'} />
-                <FieldRow label="Medžiagos" value={woMaterials.join(', ') || '—'} />
-                <FieldRow label="Operacija (ką atlikti)" value={woOperation || '—'} />
-                {p.completionReport && (
+                {woTab === 0 && (
                   <>
-                    <Divider sx={{ my: 1 }} />
-                    <Box sx={{ px: 2, py: 0.5 }}>
-                      <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: '#8B5CF6' }}>
-                        Darbuotojo ataskaita
-                      </Typography>
-                    </Box>
-                    <FieldRow label="Atlikimo data" value={p.completionReport.completedAt} />
-                    <FieldRow label="Sugaištas laikas" value={formatElapsed(p.completionReport.elapsed)} />
-                    <FieldRow label="Gedimo priežastis" value={p.completionReport.faultReason || '—'} />
-                    <FieldRow label="Naudotos medžiagos" value={p.completionReport.materialsYn === 'Taip' ? `${p.completionReport.material} – ${p.completionReport.amount}` : 'Ne'} />
-                    {p.completionReport.notes ? (
-                      <Box sx={{ px: 2, py: 1 }}>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>Pastabos</Typography>
-                        <Typography variant="body2">{p.completionReport.notes}</Typography>
-                      </Box>
-                    ) : null}
+                    <FieldRow label="Darbo užsakymas" value={p.faultType} />
+                    <FieldRow label="Techninis objektas" value={p.techObject} />
+                    {p.aptarnavimoDaznas && <FieldRow label="Objekto aptarnavimo dažnumas" value={p.aptarnavimoDaznas} />}
                   </>
+                )}
+                {woTab === 1 && (
+                  <Box>
+                    {TECH_OBJEKTAI.filter(o => o.kelias === p.kelias).map((o, i) => (
+                      <Box key={i} sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                        <Typography variant="body2">{o.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">{o.kelias} kelias</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+                {woTab === 2 && (
+                  (p.woHistory ?? []).length === 0 ? (
+                    <Box sx={{ px: 2, py: 3 }}>
+                      <Typography variant="body2" color="text.secondary">Atlikimo istorija tuščia</Typography>
+                    </Box>
+                  ) : (
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontSize: '0.72rem', fontWeight: 600 }}>Atlikimo data</TableCell>
+                          <TableCell sx={{ fontSize: '0.72rem', fontWeight: 600 }}>Trukmė</TableCell>
+                          <TableCell sx={{ fontSize: '0.72rem', fontWeight: 600 }}>Vyr. specialistas</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {(p.woHistory ?? []).map((h, i) => (
+                          <TableRow key={i}>
+                            <TableCell sx={{ fontSize: '0.72rem' }}>{h.date}</TableCell>
+                            <TableCell sx={{ fontSize: '0.72rem' }}>{h.duration}</TableCell>
+                            <TableCell sx={{ fontSize: '0.72rem' }}>{h.senior}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )
                 )}
               </>
             ) : (
-              <Box sx={{ px: 2, py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Pasirinkti komandą</InputLabel>
-                  <Select
-                    multiple
-                    value={selectedNames}
-                    onChange={e => handleNameChange(e.target.value as string[])}
-                    input={<OutlinedInput label="Pasirinkti komandą" />}
-                    renderValue={selected => `${selected.length} nariai`}
-                  >
-                    {TEAM_MEMBERS.map(name => (
-                      <MenuItem key={name} value={name}>{name}</MenuItem>
+              <>
+                <FieldRow label="Funkcinė lokacija" value={p.functionalLocation} />
+                <FieldRow label="Techninis objektas" value={p.techObject} />
+                <FieldRow label="Gedimo tipas" value={p.faultType} />
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>
+                    Papildoma informacija
+                  </Typography>
+                  <Typography variant="body2">{p.notes || '—'}</Typography>
+                </Box>
+                <Box sx={{ px: 2, py: 2 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                    Nuotraukos
+                  </Typography>
+                  <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 0.5 }}>
+                    {(p.photos.length > 0 ? p.photos : ['/images/railway-signal-snow.jpg']).map((src, i) => (
+                      <Box key={i} sx={{
+                        width: 120, height: 90, borderRadius: '8px', flexShrink: 0,
+                        backgroundImage: `url(${src})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        bgcolor: 'grey.200',
+                      }} />
                     ))}
-                  </Select>
-                </FormControl>
+                  </Stack>
+                </Box>
+              </>
+            )}
 
-                {selectedNames.length > 0 && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                      Spustelėkite žvaigždutę, kad paskirtumėte vyresnįjį specialistą
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {selectedNames.map(name => (
-                        <Chip
-                          key={name}
-                          label={name}
-                          size="small"
-                          onClick={() => setSeniorName(seniorName === name ? null : name)}
-                          icon={seniorName === name
-                            ? <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B !important' }} />
-                            : <PersonOutlineIcon sx={{ fontSize: 14 }} />
-                          }
-                          sx={seniorName === name ? { bgcolor: '#FFF8E1', border: 1, borderColor: '#F59E0B', cursor: 'pointer' } : { cursor: 'pointer' }}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-
+            {isWorkOrder ? (
+              woTab === 0 ? (
+                <>
+                  <FieldRow label="Atlikimo data" value={woDate || '—'} />
+                  <FieldRow label="Medžiagos" value="Tepalas" />
+                  <FieldRow label="Kiekis" value="2L" />
+                  <Divider />
+                  {p.workOrderStatus === 'backlog' ? (
+                    <Box sx={{ px: 2, py: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Pasirinkti komandą</InputLabel>
+                        <Select
+                          multiple
+                          value={selectedNames}
+                          onChange={e => handleNameChange(e.target.value as string[])}
+                          input={<OutlinedInput label="Pasirinkti komandą" />}
+                          renderValue={selected => (selected as string[]).join(', ')}
+                        >
+                          {TEAM_MEMBERS.map(name => (
+                            <MenuItem key={name} value={name}>{name}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {selectedNames.length > 0 && (
+                        <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                          {selectedNames.map(name => (
+                            <Chip
+                              key={name}
+                              label={name}
+                              size="small"
+                              onClick={() => setSeniorName(seniorName === name ? null : name)}
+                              icon={seniorName === name
+                                ? <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B !important' }} />
+                                : <PersonOutlineIcon sx={{ fontSize: 14 }} />
+                              }
+                              sx={seniorName === name ? { bgcolor: '#FFF8E1', border: 1, borderColor: '#F59E0B', cursor: 'pointer' } : { cursor: 'pointer' }}
+                            />
+                          ))}
+                        </Stack>
+                      )}
+                      <TextField
+                        label="Darbo pradžia"
+                        type="time"
+                        size="small"
+                        fullWidth
+                        value={jobTime}
+                        onFocus={() => { if (!jobTime) setJobTime('08:00') }}
+                        onChange={e => setJobTime(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box sx={{ px: 2, py: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {selectedNames.length > 0 && (
+                        <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                          {selectedNames.map(name => (
+                            <Chip
+                              key={name}
+                              label={name}
+                              size="small"
+                              icon={seniorName === name
+                                ? <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B !important' }} />
+                                : <PersonOutlineIcon sx={{ fontSize: 14 }} />
+                              }
+                              sx={seniorName === name ? { bgcolor: '#FFF8E1', border: 1, borderColor: '#F59E0B' } : {}}
+                            />
+                          ))}
+                        </Stack>
+                      )}
+                      {jobTime && <FieldRow label="Darbo pradžia" value={jobTime} />}
+                    </Box>
+                  )}
+                  {p.completionReport && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <Box sx={{ px: 2, py: 0.5 }}>
+                        <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: '#8B5CF6' }}>
+                          Darbuotojo ataskaita
+                        </Typography>
+                      </Box>
+                      <FieldRow label="Atlikimo data" value={p.completionReport.completedAt} />
+                      <FieldRow label="Sugaištas laikas" value={formatElapsed(p.completionReport.elapsed)} />
+                      <FieldRow label="Gedimo priežastis" value={p.completionReport.faultReason || '—'} />
+                      <FieldRow label="Naudotos medžiagos" value={p.completionReport.materialsYn === 'Taip' ? `${p.completionReport.material} – ${p.completionReport.amount}` : 'Ne'} />
+                      {p.completionReport.notes ? (
+                        <Box sx={{ px: 2, py: 1 }}>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.25 }}>Pastabos</Typography>
+                          <Typography variant="body2">{p.completionReport.notes}</Typography>
+                        </Box>
+                      ) : null}
+                    </>
+                  )}
+                </>
+              ) : null
+            ) : (
+              <Box sx={{ px: 2, py: 2, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                 <TextField
                   label="Atlikimo data"
                   type="date"
@@ -236,54 +329,77 @@ export function VadovasPranesimasDetail({ id: propId, onClose, onConfirm }: Prop
                   InputLabelProps={{ shrink: true }}
                 />
 
+                <FieldRow label="Medžiagos" value="Tepalas" />
+                <FieldRow label="Kiekis" value="2L" />
+                <Divider />
                 <FormControl fullWidth size="small">
-                  <InputLabel>Medžiagos</InputLabel>
+                  <InputLabel>Pasirinkti komandą</InputLabel>
                   <Select
-                    value={material}
-                    onChange={e => setMaterial(e.target.value)}
-                    label="Medžiagos"
+                    multiple
+                    value={selectedNames}
+                    onChange={e => handleNameChange(e.target.value as string[])}
+                    input={<OutlinedInput label="Pasirinkti komandą" />}
+                    renderValue={selected => (selected as string[]).join(', ')}
                   >
-                    {MATERIALS.map(m => (
-                      <MenuItem key={m} value={m}>{m}</MenuItem>
+                    {TEAM_MEMBERS.map(name => (
+                      <MenuItem key={name} value={name}>{name}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-
-                <FormControl fullWidth size="small">
-                  <InputLabel>Operacija (ką atlikti)</InputLabel>
-                  <Select
-                    value={operation}
-                    onChange={e => setOperation(e.target.value)}
-                    label="Operacija (ką atlikti)"
-                  >
-                    {OPERATIONS.map(o => (
-                      <MenuItem key={o} value={o}>{o}</MenuItem>
+                {selectedNames.length > 0 && (
+                  <Stack direction="row" flexWrap="wrap" gap={1}>
+                    {selectedNames.map(name => (
+                      <Chip
+                        key={name}
+                        label={name}
+                        size="small"
+                        onClick={() => setSeniorName(seniorName === name ? null : name)}
+                        icon={seniorName === name
+                          ? <ManageAccountsIcon sx={{ fontSize: 14, color: '#F59E0B !important' }} />
+                          : <PersonOutlineIcon sx={{ fontSize: 14 }} />
+                        }
+                        sx={seniorName === name ? { bgcolor: '#FFF8E1', border: 1, borderColor: '#F59E0B', cursor: 'pointer' } : { cursor: 'pointer' }}
+                      />
                     ))}
-                  </Select>
-                </FormControl>
-
-                {operation && (
-                  <Box sx={{ bgcolor: 'grey.50', border: 1, borderColor: 'divider', borderRadius: '8px', px: 2, py: 1.5 }}>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" color="text.secondary">Nuvykimas</Typography>
-                      <Typography variant="body2">2.5 val.</Typography>
-                    </Stack>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-                      <Typography variant="body2" color="text.secondary">Darbo atlikimas</Typography>
-                      <Typography variant="body2">2 val.</Typography>
-                    </Stack>
-                    <Stack direction="row" justifyContent="space-between" sx={{ borderTop: 1, borderColor: 'divider', pt: 0.75 }}>
-                      <Typography variant="body2" fontWeight={600}>Viso</Typography>
-                      <Typography variant="body2" fontWeight={600}>4.5 val.</Typography>
-                    </Stack>
-                  </Box>
+                  </Stack>
                 )}
+                <TextField
+                  label="Darbo pradžia"
+                  type="time"
+                  size="small"
+                  fullWidth
+                  value={jobTime}
+                  onChange={e => setJobTime(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                />
               </Box>
             )}
           </>
         )}
       </Box>
 
+      {isWorkOrder && p?.workOrderStatus === 'backlog' && (
+        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button variant="contained" fullWidth onClick={() => {
+            updateWorkOrder(id!, {
+              workOrderStatus: 'planned',
+              woTeam: selectedNames,
+              woSeniorName: seniorName ?? undefined,
+              woJobTime: jobTime || undefined,
+            })
+            close()
+          }}>
+            Išsaugoti
+          </Button>
+        </Box>
+      )}
+      {isWorkOrder && p?.workOrderStatus === 'planned' && (
+        <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+          <Button variant="outlined" fullWidth onClick={() => updateWorkOrder(id!, { workOrderStatus: 'backlog' })}>
+            Redaguoti
+          </Button>
+        </Box>
+      )}
       {isWorkOrder && p?.workOrderStatus === 'pending_approval' && (
         <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
           <Button variant="contained" fullWidth onClick={() => { updateWorkOrderStatus(id!, 'done'); close() }}>

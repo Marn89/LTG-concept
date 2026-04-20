@@ -17,16 +17,19 @@ interface Props {
   items: TechObject[]
   selected: TechObject[]
   center?: [number, number]
+  zoom?: number
+  coordsOverride?: Record<string, [number, number]>
+  highlightedCode?: string | null
 }
 
-export function StationMap({ items, selected, center }: Props) {
+export function StationMap({ items, selected, center, zoom = 16, coordsOverride, highlightedCode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const layerRef = useRef<L.LayerGroup | null>(null)
 
   useEffect(() => {
     if (!containerRef.current) return
-    const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? DEFAULT_CENTER, 16)
+    const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? DEFAULT_CENTER, zoom)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
     }).addTo(map)
@@ -38,23 +41,24 @@ export function StationMap({ items, selected, center }: Props) {
 
   useEffect(() => {
     if (!mapRef.current) return
-    mapRef.current.setView(center ?? DEFAULT_CENTER, 16)
-  }, [center])
+    mapRef.current.setView(center ?? DEFAULT_CENTER, zoom)
+  }, [center, zoom])
 
   useEffect(() => {
     const layer = layerRef.current
     if (!layer) return
+    const coords = { ...OBJECT_COORDS, ...coordsOverride }
     const selectedCodes = new Set(selected.map(s => s.code))
     layer.clearLayers()
     items.forEach(o => {
-      const pos = OBJECT_COORDS[o.code]
+      const pos = coords[o.code]
       if (!pos) return
-      const color = selectedCodes.has(o.code) ? '#2e7d32' : '#9e9e9e'
+      const color = o.code === highlightedCode ? '#00e676' : selectedCodes.has(o.code) ? '#2e7d32' : '#9e9e9e'
       L.marker(pos, { icon: makeIcon(color) })
         .bindTooltip(o.name, { direction: 'top', offset: [0, -8] })
         .addTo(layer)
     })
-  }, [items, selected])
+  }, [items, selected, coordsOverride, highlightedCode])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }

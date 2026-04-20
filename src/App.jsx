@@ -21,6 +21,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/planuotojas" element={<PlanuotojasPage />} />
+      <Route path="/planuotojas/naujas" element={<PlanuotojasPage />} />
+      <Route path="/planuotojas/:planId" element={<PlanuotojasPage />} />
       <Route path="/darbuotojas" element={<Navigate to="/darbuotojas/mano-uzduotys" replace />} />
       <Route path="/darbuotojas/mano-uzduotys" element={<DarbuotojasPage />} />
       <Route path="/darbuotojas/pranesimai" element={<DarbuotojasPage />} />
