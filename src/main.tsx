@@ -9,6 +9,7 @@ import { PranesiamaiProvider } from './features/darbuotojas/PranesiamaiContext'
 import { WoFormProvider } from './features/vadovas/WoFormContext'
 import { PranesimasFormProvider } from './features/darbuotojas/PranesimasFormContext'
 import { WoProvider } from './features/vadovas/WoContext'
+import { PlanuotojasV2Provider } from './features/planuotojas/PlanuotojasV2Context'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <PlanuotojasV2Provider>
         <PranesiamaiProvider>
           <WoProvider>
             <WoFormProvider>
@@ -26,6 +28,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             </WoFormProvider>
           </WoProvider>
         </PranesiamaiProvider>
+        </PlanuotojasV2Provider>
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>

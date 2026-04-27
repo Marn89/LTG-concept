@@ -1,16 +1,20 @@
 import { useState } from 'react'
+import { useV2Plans } from '../features/planuotojas/PlanuotojasV2Context'
 import { useNavigate, useLocation, useParams } from 'react-router-dom'
 import {
   Box, Typography, Stack, Button, Divider,
   Chip, Autocomplete, TextField, IconButton, Breadcrumbs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl, Collapse,
+  Menu, Tabs, Tab,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddIcon from '@mui/icons-material/Add'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import { WebAppShell } from '../layout/WebAppShell'
 import { ROKISKIS_TOP_LEVEL, ROKISKIS_BY_PARENT, type TechObject } from '../data/rokiskisObjects'
 import { RecurrencePicker } from '../components/RecurrencePicker'
@@ -253,6 +257,9 @@ export function PlanuotojasPage() {
   const location = useLocation()
   const { planId } = useParams<{ planId: string }>()
   const open = location.pathname === '/planuotojas/naujas'
+  const { v2Plans } = useV2Plans()
+  const [selectedV2, setSelectedV2] = useState<typeof v2Plans[0] | null>(null)
+  const [v2Tab, setV2Tab] = useState(0)
   const [planiniai, setPlaniniai] = useState<PlaninisDarbas[]>([])
   const selected = planId ? (planiniai.find(p => String(p.id) === planId) ?? null) : null
   const [prieziura, setPrieziura] = useState<{ label: string; group: string } | null>(null)
@@ -264,6 +271,7 @@ export function PlanuotojasPage() {
   const [rrule, setRrule] = useState<string | null>(null)
   const [rrule2, setRrule2] = useState<string | null>(null)
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null)
+  const [createAnchor, setCreateAnchor] = useState<null | HTMLElement>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined)
   const [mapZoom, setMapZoom] = useState(16)
@@ -349,22 +357,54 @@ export function PlanuotojasPage() {
 
   return (
     <WebAppShell headerActions={
-      <IconButton size="small" onClick={() => {
-        const QUICK_OPTIONS = ['Periodinė iešmų patikra','MPC spintų patikra','Periodinė Šviesaforų patikra','GS RES priežiūra','SĮ kabelių patikra','NMŠ patikra']
-        const darbas = QUICK_OPTIONS[Math.floor(Math.random() * QUICK_OPTIONS.length)]
-        const today = new Date().toISOString().split('T')[0]
-        setPlaniniai(prev => [...prev, { id: Date.now(), darbas, startDate: today, objektai: IESMAI_SUTEPIMAS, rrule: 'FREQ=WEEKLY', rrule2: null }])
-      }}>
-        <AddIcon fontSize="small" />
-      </IconButton>
+      <>
+        <IconButton size="small" onClick={() => navigate('/planuotojas/uzduotys')}>
+          <AssignmentOutlinedIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small">
+          <CategoryOutlinedIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" onClick={() => {
+          const QUICK_OPTIONS = ['Periodinė iešmų patikra','MPC spintų patikra','Periodinė Šviesaforų patikra','GS RES priežiūra','SĮ kabelių patikra','NMŠ patikra']
+          const darbas = QUICK_OPTIONS[Math.floor(Math.random() * QUICK_OPTIONS.length)]
+          const today = new Date().toISOString().split('T')[0]
+          setPlaniniai(prev => [...prev, { id: Date.now(), darbas, startDate: today, objektai: IESMAI_SUTEPIMAS, rrule: 'FREQ=WEEKLY', rrule2: null }])
+        }}>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </>
     }>
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={700}>Planiniai darbai</Typography>
-          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => navigate('/planuotojas/naujas')}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={e => setCreateAnchor(e.currentTarget)}>
             Sukurti planinį darbą
           </Button>
+          <Menu anchorEl={createAnchor} open={Boolean(createAnchor)} onClose={() => setCreateAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          >
+            <MenuItem onClick={() => { setCreateAnchor(null); navigate('/planuotojas/naujas') }}>
+              Versija 1
+            </MenuItem>
+            <MenuItem onClick={() => { setCreateAnchor(null); navigate('/planuotojas/naujas-v2') }}>
+              Versija 2
+            </MenuItem>
+          </Menu>
         </Stack>
+
+        {v2Plans.length > 0 && (
+          <Stack spacing={1} sx={{ mb: 2 }}>
+            {v2Plans.map((p, i) => (
+              <Box key={i} onClick={() => setSelectedV2(p)} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5, bgcolor: 'background.paper', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
+                <Typography variant="body2" fontWeight={500}>
+                  {p.grupe} / {p.sistema.join(', ')} / {p.kelioKategorija} / {p.priedai}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Užduočių skaičius: {p.uzduotys.length}</Typography>
+              </Box>
+            ))}
+          </Stack>
+        )}
 
         {planiniai.length === 0 ? (
           <Stack alignItems="center" justifyContent="center" spacing={1} sx={{ flex: 1 }}>
@@ -399,6 +439,7 @@ export function PlanuotojasPage() {
             </Table>
           </TableContainer>
         )}
+
       </Box>
 
       {open && (
@@ -694,6 +735,73 @@ export function PlanuotojasPage() {
           </Box>
         </Box>
       </Box>
+      )}
+
+      {selectedV2 && (
+        <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, bgcolor: 'grey.100', display: 'flex', flexDirection: 'column', alignItems: 'center', px: 4, pt: 3, pb: '48px' }}>
+          <Box sx={{ width: '100%', maxWidth: 560, mb: 1.5 }}>
+            <Breadcrumbs sx={{ '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}>
+              <Typography variant="caption" color="primary.main" sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => { setSelectedV2(null); setV2Tab(0) }}>
+                Planiniai darbai
+              </Typography>
+              <Typography variant="caption" color="text.primary" fontWeight={600}>Iešmų priežiūros planas</Typography>
+            </Breadcrumbs>
+          </Box>
+          <Box sx={{ width: '100%', maxWidth: 560, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 4, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: 0, flexShrink: 0 }}>
+              <Typography variant="subtitle1" fontWeight={700}>Iešmų priežiūros planas</Typography>
+              <IconButton size="small" onClick={() => { setSelectedV2(null); setV2Tab(0) }}><CloseIcon fontSize="small" /></IconButton>
+            </Stack>
+            <Tabs value={v2Tab} onChange={(_, v) => setV2Tab(v)} sx={{ px: 3, borderBottom: 1, borderColor: 'divider', flexShrink: 0, minHeight: 40, '& .MuiTab-root': { minHeight: 40, fontSize: '0.75rem' } }}>
+              <Tab label="Pagrindinis" />
+              <Tab label="Objektai" />
+            </Tabs>
+            <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
+              {v2Tab === 0 && (
+                <Stack spacing={2}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Objektų grupė</Typography>
+                    <Typography variant="body2">{selectedV2.grupe}</Typography>
+                  </Stack>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Sistema</Typography>
+                    <Typography variant="body2">{selectedV2.sistema.join(', ')}</Typography>
+                  </Stack>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Kelio kategorija</Typography>
+                    <Typography variant="body2">{selectedV2.kelioKategorija}</Typography>
+                  </Stack>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Priedai</Typography>
+                    <Typography variant="body2">{selectedV2.priedai}</Typography>
+                  </Stack>
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Užduotys</Typography>
+                    <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+                      {selectedV2.uzduotys.map(u => (
+                        <Box key={u} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75 }}>
+                          <Typography variant="caption">{u}</Typography>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </Stack>
+              )}
+              {v2Tab === 1 && (
+                <Stack spacing={1}>
+                  {selectedV2.objects.map(obj => (
+                    <Box key={obj} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1 }}>
+                      <Typography variant="body2">{obj}</Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Box>
+            <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
+              <Button onClick={() => { setSelectedV2(null); setV2Tab(0) }}>Uždaryti</Button>
+            </Box>
+          </Box>
+        </Box>
       )}
     </WebAppShell>
   )

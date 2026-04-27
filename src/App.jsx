@@ -15,6 +15,8 @@ import { TechObjectTypePage } from './pages/TechObjectTypePage'
 import { TechObjectItemPage } from './pages/TechObjectItemPage'
 import { FaultTypePage } from './pages/FaultTypePage'
 import { PlanuotojasPage } from './pages/PlanuotojasPage'
+import { PlanuotojasV2Page } from './pages/PlanuotojasV2Page'
+import { UzduotysPage } from './pages/UzduotysPage'
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
       <Route path="/" element={<LoginPage />} />
       <Route path="/planuotojas" element={<PlanuotojasPage />} />
       <Route path="/planuotojas/naujas" element={<PlanuotojasPage />} />
+      <Route path="/planuotojas/naujas-v2" element={<PlanuotojasV2Page />} />
+      <Route path="/planuotojas/uzduotys" element={<UzduotysPage />} />
       <Route path="/planuotojas/:planId" element={<PlanuotojasPage />} />
       <Route path="/darbuotojas" element={<Navigate to="/darbuotojas/mano-uzduotys" replace />} />
       <Route path="/darbuotojas/mano-uzduotys" element={<DarbuotojasPage />} />
