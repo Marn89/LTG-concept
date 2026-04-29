@@ -82,16 +82,16 @@ const NAMES = [
 ]
 
 const GROUP_SIZES: [string, number][] = [
-  ['Šiaulių meistrija',         45],
-  ['Kužių meistrija',           28],
-  ['Zoknių meistrija',          22],
-  ['Akmenės meistrija',         19],
-  ['Bugenių meistrija',         34],
-  ['Radviliškio 3-oji meistrija', 17],
-  ['Radviliškio 2-oji meistrija', 23],
-  ['Panevėžio meistrija',       41],
-  ['Šeduvos meistrija',         15],
-  ['Rokiškio meistrija',        65],
+  ['Šiaulių darbo centras',         45],
+  ['Kužių darbo centras',           28],
+  ['Zoknių darbo centras',          22],
+  ['Akmenės darbo centras',         19],
+  ['Bugenių darbo centras',         34],
+  ['Radviliškio 3-oji darbo centras', 17],
+  ['Radviliškio 2-oji darbo centras', 23],
+  ['Panevėžio darbo centras',       41],
+  ['Šeduvos darbo centras',         15],
+  ['Rokiškio darbo centras',        65],
 ]
 
 export const IESMAI_SUTEPIMAS: TechObject[] = NAMES.map((name, i) => ({

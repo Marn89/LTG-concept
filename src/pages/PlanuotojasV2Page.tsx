@@ -86,23 +86,23 @@ const UZDUOTYS = [
   '4.7.2b. Kitų judančiųjų dalių ir suktuko mechanizmo tepimas [Kartą per metus]',
 ]
 
-const MEISTRIJOS: { name: string; stations: { name: string; objects: string[] }[] }[] = [
-  { name: 'Šiaulių meistrija', stations: [
+const DARBO_CENTRAI: { name: string; stations: { name: string; objects: string[] }[] }[] = [
+  { name: 'Šiaulių darbo centras', stations: [
     { name: 'Šiaulių gel. stotis', objects: ['Iešmas Nr. 1K', 'Iešmas Nr. 3K', 'Iešmas Nr. 5K', 'Iešmas Nr. 7K', 'Iešmas Nr. 9K', 'Iešmas Nr. 11K', 'Iešmas Nr. 13K', 'Iešmas Nr. 15K'] },
     { name: 'Zoknių gel. stotis', objects: ['Iešmas Nr. 2K', 'Iešmas Nr. 4K', 'Iešmas Nr. 6K', 'Iešmas Nr. 8K', 'Iešmas Nr. 10K', 'Iešmas Nr. 12K'] },
     { name: 'Bugenių gel. stotis', objects: ['Iešmas Nr. 101K', 'Iešmas Nr. 103K', 'Iešmas Nr. 105K', 'Iešmas Nr. 107K'] },
   ]},
-  { name: 'Kužių meistrija', stations: [
+  { name: 'Kužių darbo centras', stations: [
     { name: 'Kužių gel. stotis', objects: ['Iešmas Nr. 201K', 'Iešmas Nr. 203K', 'Iešmas Nr. 205K', 'Iešmas Nr. 207K', 'Iešmas Nr. 209K'] },
     { name: 'Radviliškio gel. stotis', objects: ['Iešmas Nr. 1L', 'Iešmas Nr. 3L', 'Iešmas Nr. 5L', 'Iešmas Nr. 7L', 'Iešmas Nr. 9L', 'Iešmas Nr. 11L', 'Iešmas Nr. 13L'] },
     { name: 'Šeduvos gel. stotis', objects: ['Iešmas Nr. 301K', 'Iešmas Nr. 303K', 'Iešmas Nr. 305K'] },
   ]},
-  { name: 'Akmenės meistrija', stations: [
+  { name: 'Akmenės darbo centras', stations: [
     { name: 'Akmenės gel. stotis', objects: ['Iešmas Nr. 401K', 'Iešmas Nr. 403K', 'Iešmas Nr. 405K', 'Iešmas Nr. 407K', 'Iešmas Nr. 409K', 'Iešmas Nr. 411K'] },
     { name: 'Viekšnių gel. stotis', objects: ['Iešmas Nr. 501K', 'Iešmas Nr. 503K', 'Iešmas Nr. 505K', 'Iešmas Nr. 507K'] },
     { name: 'Papilės gel. stotis', objects: ['Iešmas Nr. 601K', 'Iešmas Nr. 603K', 'Iešmas Nr. 605K', 'Iešmas Nr. 607K', 'Iešmas Nr. 609K'] },
   ]},
-  { name: 'Rokiškio meistrija', stations: [
+  { name: 'Rokiškio darbo centras', stations: [
     { name: 'Rokiškio gel. stotis', objects: ['Iešmas Nr. 701K', 'Iešmas Nr. 703K', 'Iešmas Nr. 705K', 'Iešmas Nr. 707K', 'Iešmas Nr. 709K', 'Iešmas Nr. 711K', 'Iešmas Nr. 713K'] },
     { name: 'Panevėžio gel. stotis', objects: ['Iešmas Nr. 801K', 'Iešmas Nr. 803K', 'Iešmas Nr. 805K', 'Iešmas Nr. 807K', 'Iešmas Nr. 809K', 'Iešmas Nr. 811K', 'Iešmas Nr. 813K', 'Iešmas Nr. 815K'] },
     { name: 'Kupiškio gel. stotis', objects: ['Iešmas Nr. 901K', 'Iešmas Nr. 903K', 'Iešmas Nr. 905K', 'Iešmas Nr. 907K', 'Iešmas Nr. 909K'] },
@@ -236,7 +236,7 @@ export function PlanuotojasV2Page() {
             </Box>
             <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
               <Button variant="contained" fullWidth size="small" onClick={() => {
-                addV2Plan({ grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, objects: MEISTRIJOS.flatMap(m => m.stations.flatMap(s => s.objects)) })
+                addV2Plan({ grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, objects: DARBO_CENTRAI.flatMap(m => m.stations.flatMap(s => s.objects)) })
                 navigate('/planuotojas')
               }}>Išsaugoti</Button>
             </Box>
@@ -262,7 +262,7 @@ export function PlanuotojasV2Page() {
                   <Typography variant="caption" color="text.disabled" textAlign="center">Pasirinkite kelio tipą</Typography>
                 </Stack>
               )}
-              {!loading && loaded && MEISTRIJOS.map(({ name, stations }) => {
+              {!loading && loaded && DARBO_CENTRAI.map(({ name, stations }) => {
                 const isOpen = expandedGroups.has(name)
                 return (
                   <Box key={name}>

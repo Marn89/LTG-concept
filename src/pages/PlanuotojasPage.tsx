@@ -31,7 +31,7 @@ const LISTBOX_PROPS = {
   style: { maxHeight: '30vh' },
 }
 
-const MEISTRIJOS = [
+const DARBO_CENTRAI = [
   // Diagnostika
   { label: 'Kelio diagnostika', group: 'Diagnostika' },
   { label: 'Diagnostikos duomenų vertinimas', group: 'Diagnostika' },
@@ -40,18 +40,18 @@ const MEISTRIJOS = [
   // Vilniaus regionas
   { label: 'Vilniaus diagnostikos padalinys', group: 'Vilniaus regionas' },
   { label: 'Įrangos patikra Vilnius', group: 'Vilniaus regionas' },
-  { label: 'Vievio meistrija', group: 'Vilniaus regionas' },
-  { label: 'Rūdiškių meistrija', group: 'Vilniaus regionas' },
-  { label: 'Lentvario atraminė meistrija', group: 'Vilniaus regionas' },
-  { label: 'Panerių atraminė meistrija', group: 'Vilniaus regionas' },
-  { label: 'Vaidotų meistrija', group: 'Vilniaus regionas' },
-  { label: 'Valčiūnų meistrija', group: 'Vilniaus regionas' },
-  { label: 'Vilniaus meistrija', group: 'Vilniaus regionas' },
-  { label: 'Kenos meistrija', group: 'Vilniaus regionas' },
-  { label: 'Ignalinos meistrija', group: 'Vilniaus regionas' },
-  { label: 'Naujosios Vilnios atraminė meistrija', group: 'Vilniaus regionas' },
-  { label: 'Pabradės atraminė meistrija', group: 'Vilniaus regionas' },
-  { label: 'Švenčionėlių atraminė meistrija', group: 'Vilniaus regionas' },
+  { label: 'Vievio darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Rūdiškių darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Lentvario atraminė darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Panerių atraminė darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Vaidotų darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Valčiūnų darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Vilniaus darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Kenos darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Ignalinos darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Naujosios Vilnios atraminė darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Pabradės atraminė darbo centras', group: 'Vilniaus regionas' },
+  { label: 'Švenčionėlių atraminė darbo centras', group: 'Vilniaus regionas' },
   { label: 'Vilniaus kelio statinių priežiūra', group: 'Vilniaus regionas' },
   { label: 'Naujosios Vilnios automatikos priežiūra', group: 'Vilniaus regionas' },
   { label: 'Panerių automatikos priežiūra', group: 'Vilniaus regionas' },
@@ -71,18 +71,18 @@ const MEISTRIJOS = [
   { label: 'Vilniaus infrastruktūros atstatymas', group: 'Vilniaus regionas' },
   // Kauno regionas
   { label: 'Kauno diagnostikos padalinys', group: 'Kauno regionas' },
-  { label: 'Baisogalos meistrija', group: 'Kauno regionas' },
-  { label: 'Jonavos atraminė meistrija', group: 'Kauno regionas' },
-  { label: 'Gaižiūnų meistrija', group: 'Kauno regionas' },
-  { label: 'Kaišiadorių atraminė meistrija', group: 'Kauno regionas' },
-  { label: 'Palemono atraminė meistrija', group: 'Kauno regionas' },
-  { label: 'Kauno meistrija', group: 'Kauno regionas' },
-  { label: 'Marijampolės meistrija', group: 'Kauno regionas' },
-  { label: 'Vilkaviškio meistrija', group: 'Kauno regionas' },
-  { label: 'Kybartų meistrija', group: 'Kauno regionas' },
-  { label: 'Kėdainių atraminė meistrija', group: 'Kauno regionas' },
-  { label: 'Kazlų Rūdos atraminė meistrija', group: 'Kauno regionas' },
-  { label: 'Šeštokų atraminė meistrija', group: 'Kauno regionas' },
+  { label: 'Baisogalos darbo centras', group: 'Kauno regionas' },
+  { label: 'Jonavos atraminė darbo centras', group: 'Kauno regionas' },
+  { label: 'Gaižiūnų darbo centras', group: 'Kauno regionas' },
+  { label: 'Kaišiadorių atraminė darbo centras', group: 'Kauno regionas' },
+  { label: 'Palemono atraminė darbo centras', group: 'Kauno regionas' },
+  { label: 'Kauno darbo centras', group: 'Kauno regionas' },
+  { label: 'Marijampolės darbo centras', group: 'Kauno regionas' },
+  { label: 'Vilkaviškio darbo centras', group: 'Kauno regionas' },
+  { label: 'Kybartų darbo centras', group: 'Kauno regionas' },
+  { label: 'Kėdainių atraminė darbo centras', group: 'Kauno regionas' },
+  { label: 'Kazlų Rūdos atraminė darbo centras', group: 'Kauno regionas' },
+  { label: 'Šeštokų atraminė darbo centras', group: 'Kauno regionas' },
   { label: 'Kauno kelio statinių priežiūra', group: 'Kauno regionas' },
   { label: 'Kauno automatikos priežiūra', group: 'Kauno regionas' },
   { label: 'Jonavos automatikos priežiūra', group: 'Kauno regionas' },
@@ -102,16 +102,16 @@ const MEISTRIJOS = [
   // Šiaulių regionas
   { label: 'Šiaulių diagnostikos padalinys', group: 'Šiaulių regionas' },
   { label: 'Įrangos patikra Radviliškis', group: 'Šiaulių regionas' },
-  { label: 'Bugenių meistrija', group: 'Šiaulių regionas' },
-  { label: 'Akmenės atraminė meistrija', group: 'Šiaulių regionas' },
-  { label: 'Kužių meistrija', group: 'Šiaulių regionas' },
-  { label: 'Šiaulių atraminė meistrija', group: 'Šiaulių regionas' },
-  { label: 'Zoknių meistrija', group: 'Šiaulių regionas' },
-  { label: 'Radviliškio 2-oji meistrija', group: 'Šiaulių regionas' },
-  { label: 'Šeduvos meistrija', group: 'Šiaulių regionas' },
-  { label: 'Panevėžio atraminė meistrija', group: 'Šiaulių regionas' },
-  { label: 'Rokiškio atraminė meistrija', group: 'Šiaulių regionas' },
-  { label: 'Radviliškio 3-oji atraminė meistrija', group: 'Šiaulių regionas' },
+  { label: 'Bugenių darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Akmenės atraminė darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Kužių darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Šiaulių atraminė darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Zoknių darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Radviliškio 2-oji darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Šeduvos darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Panevėžio atraminė darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Rokiškio atraminė darbo centras', group: 'Šiaulių regionas' },
+  { label: 'Radviliškio 3-oji atraminė darbo centras', group: 'Šiaulių regionas' },
   { label: 'Šiaulių kelio statinių priežiūra', group: 'Šiaulių regionas' },
   { label: 'Bugenių automatikos priežiūra', group: 'Šiaulių regionas' },
   { label: 'Akmenės automatikos priežiūra', group: 'Šiaulių regionas' },
@@ -142,15 +142,15 @@ const MEISTRIJOS = [
   { label: 'Ilgabėgių gamyba', group: 'Bėgių suvirinimas' },
   // Klaipėdos regionas
   { label: 'Klaipėdos diagnostikos padalinys', group: 'Klaipėdos regionas' },
-  { label: 'Klaipėdos meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Kretingos atraminė meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Plungės meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Telšių meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Pavenčių atraminė meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Draugystės atraminė meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Rimkų meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Pagėgių meistrija', group: 'Klaipėdos regionas' },
-  { label: 'Tauragės atraminė meistrija', group: 'Klaipėdos regionas' },
+  { label: 'Klaipėdos darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Kretingos atraminė darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Plungės darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Telšių darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Pavenčių atraminė darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Draugystės atraminė darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Rimkų darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Pagėgių darbo centras', group: 'Klaipėdos regionas' },
+  { label: 'Tauragės atraminė darbo centras', group: 'Klaipėdos regionas' },
   { label: 'Klaipėdos kelio statinių priežiūra', group: 'Klaipėdos regionas' },
   { label: 'Draugystės automatikos priežiūra', group: 'Klaipėdos regionas' },
   { label: 'Klaipėdos automatikos priežiūra', group: 'Klaipėdos regionas' },
@@ -168,8 +168,8 @@ const MEISTRIJOS = [
 ]
 
 interface Lokacija { label: string; code: string; group: string }
-const LOKACIJOS_BY_MEISTRIJA: Record<string, Lokacija[]> = {
-  'Rokiškio meistrija (ATRAMINĖ)': [
+const LOKACIJOS_BY_DARBO_CENTRAS: Record<string, Lokacija[]> = {
+  'Rokiškio darbo centras (ATRAMINĖ)': [
     { label: 'Gustonių gel. stotis', code: 'LG-L08-000GUS', group: 'Stotys' },
     { label: 'Kupiškio gel. stotis', code: 'LG-L08-000KPS', group: 'Stotys' },
     { label: 'Panevėžio gel. stotis', code: 'LG-L08-000PNE', group: 'Stotys' },
@@ -239,17 +239,17 @@ function spreadCoords(center: [number, number], count: number): [number, number]
   })
 }
 
-const MEISTRIJA_COORDS: Record<string, [number, number]> = {
-  'Šiaulių meistrija':           [55.9333, 23.3167],
-  'Kužių meistrija':             [55.8489, 23.1667],
-  'Zoknių meistrija':            [55.9947, 23.3556],
-  'Akmenės meistrija':           [56.2500, 22.7500],
-  'Bugenių meistrija':           [55.9175, 23.0342],
-  'Radviliškio 3-oji meistrija': [55.8167, 23.5500],
-  'Radviliškio 2-oji meistrija': [55.8167, 23.5500],
-  'Panevėžio meistrija':         [55.7333, 24.3667],
-  'Šeduvos meistrija':           [55.7525, 23.7603],
-  'Rokiškio meistrija':          [55.9667, 25.5833],
+const DARBO_CENTRAS_COORDS: Record<string, [number, number]> = {
+  'Šiaulių darbo centras':           [55.9333, 23.3167],
+  'Kužių darbo centras':             [55.8489, 23.1667],
+  'Zoknių darbo centras':            [55.9947, 23.3556],
+  'Akmenės darbo centras':           [56.2500, 22.7500],
+  'Bugenių darbo centras':           [55.9175, 23.0342],
+  'Radviliškio 3-oji darbo centras': [55.8167, 23.5500],
+  'Radviliškio 2-oji darbo centras': [55.8167, 23.5500],
+  'Panevėžio darbo centras':         [55.7333, 24.3667],
+  'Šeduvos darbo centras':           [55.7525, 23.7603],
+  'Rokiškio darbo centras':          [55.9667, 25.5833],
 }
 
 export function PlanuotojasPage() {
@@ -280,7 +280,7 @@ export function PlanuotojasPage() {
   const [meistriaCoords, setMeistriaCoords] = useState<Record<string, [number, number]>>({})
   const toggleGroup = (g: string) => {
     setExpandedGroups(prev => { const s = new Set(prev); s.has(g) ? s.delete(g) : s.add(g); return s })
-    const cityCenter = MEISTRIJA_COORDS[g]
+    const cityCenter = DARBO_CENTRAS_COORDS[g]
     if (cityCenter) {
       setMapCenter(cityCenter)
       setMapZoom(13)
@@ -303,7 +303,7 @@ export function PlanuotojasPage() {
   const [vyresnysis, setVyresnysis] = useState<string | null>(null)
   const [medziagos, setMedziagos] = useState<string[]>([])
 
-  const allLokacijos = Object.values(LOKACIJOS_BY_MEISTRIJA).flat()
+  const allLokacijos = Object.values(LOKACIJOS_BY_DARBO_CENTRAS).flat()
   const GRUPES_BY_LOKACIJA: Record<string, string[]> = {
     'LG-L08-000RKS': ['LG-L08-000RKS-IESA'],
   }
@@ -376,9 +376,9 @@ export function PlanuotojasPage() {
     }>
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-          <Typography variant="h6" fontWeight={700}>Planiniai darbai</Typography>
+          <Typography variant="h6" fontWeight={700}>Objektų aptarnavimo planai</Typography>
           <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={e => setCreateAnchor(e.currentTarget)}>
-            Sukurti planinį darbą
+            Sukurti planą
           </Button>
           <Menu anchorEl={createAnchor} open={Boolean(createAnchor)} onClose={() => setCreateAnchor(null)}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}

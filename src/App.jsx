@@ -17,15 +17,18 @@ import { FaultTypePage } from './pages/FaultTypePage'
 import { PlanuotojasPage } from './pages/PlanuotojasPage'
 import { PlanuotojasV2Page } from './pages/PlanuotojasV2Page'
 import { UzduotysPage } from './pages/UzduotysPage'
+import { ObjektaiPage } from './pages/ObjektaiPage'
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/" element={<Navigate to="/vadovas" replace />} />
       <Route path="/planuotojas" element={<PlanuotojasPage />} />
       <Route path="/planuotojas/naujas" element={<PlanuotojasPage />} />
       <Route path="/planuotojas/naujas-v2" element={<PlanuotojasV2Page />} />
       <Route path="/planuotojas/uzduotys" element={<UzduotysPage />} />
+      <Route path="/objektai" element={<Navigate to="/objektai/darbai" replace />} />
+      <Route path="/objektai/:tabSlug" element={<ObjektaiPage />} />
       <Route path="/planuotojas/:planId" element={<PlanuotojasPage />} />
       <Route path="/darbuotojas" element={<Navigate to="/darbuotojas/mano-uzduotys" replace />} />
       <Route path="/darbuotojas/mano-uzduotys" element={<DarbuotojasPage />} />
