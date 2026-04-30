@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Typography, IconButton, FormControl, InputLabel, Select, MenuItem, Chip, OutlinedInput, Divider, Stack, CircularProgress, Collapse, Button } from '@mui/material'
+import { Box, Typography, IconButton, Chip, Divider, Stack, Collapse, Button, Autocomplete, TextField, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Stepper, Step, StepLabel } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
+import AddIcon from '@mui/icons-material/Add'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { WebAppShell } from '../layout/WebAppShell'
 import { useV2Plans } from '../features/planuotojas/PlanuotojasV2Context'
 
 const SISTEMOS = [
@@ -17,23 +17,48 @@ const SISTEMOS = [
 ]
 
 const OBJEKTU_GRUPES = [
-  'APS (Automatinė pervažų signalizacija)',
-  'Ašių skaičiavimo sistemos',
-  'Bekontakčiai kelio jutikliai',
-  'Bėgių grandinės',
-  'Elektros tiekimas',
-  'Fotoelektriniai / radiotechniniai jutikliai',
-  'Gabarito kontrolės įrenginiai',
-  'Gelžbetoninės konstrukcijos',
-  'Iešmai',
-  'Kabelių tinklas ir montažas',
-  'Mikroprocesorinės sistemos (MPC/SKMPC)',
-  'Signalizacijos aparatinė įranga',
-  'Sąryšis ir veikimo parametrai',
-  'Tunelių ir tiltų signalizacija',
-  'Vagonų stabdikliai',
-  'Valdymo įrenginiai',
-  'Šviesoforai',
+  'Autonominis el. šaltinis (AELS)',
+  'AERAS (AERA)',
+  'AKAS (AKAS)',
+  'Apšvietimas (APSV)',
+  'Atramos/atmušos (ATRA)',
+  'TRR (ATRR)',
+  'Centrinis NMŠ (CNMS)',
+  'Duomenų perdavimo įranga (DUOM)',
+  'Elektros linijos (ELLI)',
+  'Elektros tiekimo įrenginys (ELTI)',
+  'Gabaritiniai vartai (GABV)',
+  'Geležinkelio keliai (GKEL)',
+  'GSM-R (GSMR)',
+  'Įrenginių bandymų ir gedimų prevencija (IBGP)',
+  'Iešmai ir sankirtos (IESA)',
+  'Iešmų šildymas (IESI)',
+  'Šilėnų ilgabėgių gamykla (ILGB)',
+  'Klaipėdos komplektavimo bazė (KOBA)',
+  'Kontaktiniai tinklai (KOTI)',
+  'Laikrodžiai (LAIK)',
+  'MRR (MARR)',
+  'Pastatai ir teritorijos (NTTE)',
+  'Oro kompresorinė Panerių st (ORKO)',
+  'Pervažos ir perėjos (PEPE)',
+  'Peronai ir platformos (PEPL)',
+  'Pralaidos (PRAL)',
+  'RAKP (RAKP)',
+  'SIS (RGIS)',
+  'Ryšių kabeliai (RYKA)',
+  'SCADA (SCAD)',
+  'Stoties eismo valdymo įranga (SEVI)',
+  'Stoties garsinis ryšys (STGR)',
+  'Sienelės ir tvoros (STVO)',
+  'Svarstyklės (SVAR)',
+  'Techninės apsaugos priemonės (TAPP)',
+  'Tarpstočio eismo valdymo įranga (TEVI)',
+  'Tiltai ir Viadukai (TIVI)',
+  'Traukos pastotė (TRPA)',
+  'Tuneliai (TUNE)',
+  'Vandens nuvedimo įrenginiai (VAND)',
+  'Vežių keitimo įrenginiai (VKIR)',
+  'Žemės sankasos (ZSAN)',
 ]
 
 const KELIO_TIPAI = [
@@ -43,93 +68,95 @@ const KELIO_TIPAI = [
 ]
 
 const UZDUOTYS = [
-  '4.1.1a. Pavarų ir tikrintuvų išorinė būklė; smailės prigludimo tikrinimas laužtuvėliu [Kartą per savaitę]',
-  '4.1.1b. Pavarų ir tikrintuvų išorinė būklė; smailės prigludimo tikrinimas laužtuvėliu [Kartą per 2 savaites]',
-  '4.1.1c. Pavarų ir tikrintuvų išorinė būklė; smailės prigludimo tikrinimas [Kartą per savaitę]',
-  '4.1.1d. Pavarų išorinė būklė; smailės prigludimo tikrinimas [Kartą per 2 savaites]',
-  '4.1.2a. Smailių prigludimas su 4 mm ir 2 mm tarpamačiais; tikrinimas ties tikrintuvu [Kartą per 2 savaites]',
-  '4.1.2b. Smailių prigludimas su 4 mm ir 2 mm tarpamačiais [Kartą per 4 savaites]',
-  '4.1.2c. Smailių prigludimas su tarpamačiais [Kartą per 2 savaites]',
-  '4.1.3. Išorinis elektros pavarų ir garnitūrų valymas [Du kartus per metus]',
-  '4.1.4a. Elektros pavarų ir tikrintuvų vidaus būklės tikrinimas [Kartą per 4 savaites]',
-  '4.1.4b. Elektros pavarų ir tikrintuvų vidaus būklės tikrinimas [Keturis kartus per metus]',
-  '4.1.4c. Pavarų vidaus būklės tikrinimas [Kartą per savaitę]',
-  '4.1.4d. S700 pavarų vidaus būklės tikrinimas [Du kartus per metus]',
-  '4.1.4e. Unistar pavarų vidaus būklės tikrinimas [Du kartus per metus]',
-  '4.1.5. Keldėžių ir UPM movų vidinės būklės, reverso relių tikrinimas [Du kartus per metus]',
-  '4.1.6a. Nuolatinės įtampos variklio srovės matavimas normaliu ir sankabos režimais [Keturis kartus per metus]',
-  '4.1.6b. Nuolatinės įtampos variklio srovės matavimas [Du kartus per metus]',
-  '4.1.6c. Variklio srovės matavimas ir kolektorių tikrinimas [Kartą per savaitę]',
-  '4.1.6d. Variklio srovės matavimas ir kolektorių tikrinimas [Kartą per 2 savaites]',
-  '4.1.7. Trifazės elektros įtampos variklio srovės matavimas [Kartą per metus]',
-  '4.1.8a. Elektros variklio įtampos matavimas [Kartą per metus]',
-  '4.1.8b. Elektros variklio įtampos matavimas [Kartą per 2 metus]',
-  '4.1.8c. Elektros variklio įtampos matavimas [Keturis kartus per metus]',
-  '4.1.8d. Elektros variklio įtampos matavimas [Du kartus per metus]',
-  '4.1.9. Sniego pneumatinio valymo įrenginių schemos veikimo tikrinimas [Kartą per metus]',
-  '4.1.10. Vietinio valdymo kontakto būklės ir veikimo tikrinimas [Du kartus per metus]',
-  '4.2.2. Hidraulinės sistemos slėgio matavimas [Du kartus per metus]',
-  '4.2.3. Rankinio pervedimo mechanizmo tikrinimas [Kartą per metus]',
-  '4.2.4. HIDROLINK tvirtinimo mazgų išorinės būklės tikrinimas [Du kartus per metus]',
-  '4.2.5. HIDROLINK hidraulinių cilindrų, vožtuvų, slėgio tikrinimas [Du kartus per metus]',
-  '4.3.1a. Jutiklių maitinimo ir išėjimo įtampos matavimas (vidurinė padėtis) [Du kartus per metus]',
-  '4.3.1b. Jutiklių maitinimo ir išėjimo įtampos matavimas (kitos padėtys) [Kartą per 4 savaites]',
-  '4.4.1. Kontaktinių ritinėlių ir kontaktų būklės tikrinimas [Kartą per metus]',
-  '4.4.2. Transmisijos tikrinimas ir tepimas, išardant [Kartą per 6 metus]',
-  '4.4.3. Pavarų įžeminimo tvirtinimo elementų tikrinimas [Kartą per metus]',
-  '4.5.1. Verstuko išorinės būklės ir tarpo tikrinimas [Kartą per 4 savaites]',
-  '4.6.1a. Iešmo ir kontrolinio užrakto tikrinimas su 4 mm tarpamačiu [Kartą per 2 savaites]',
-  '4.6.1b. Iešmo ir kontrolinio užrakto tikrinimas su 4 mm tarpamačiu [Kartą per 4 savaites]',
-  '4.6.2. Kontrolinio užrakto išardymas, valymas, plovimas, tepimas [Kartą per metus]',
-  '4.7.1. Elektros pavaros įtampos ir srovės matavimas [Kartą per metus]',
-  '4.7.2a. Varančiojo veleno ir linijinio guolio tepimas [Du kartus per metus]',
-  '4.7.2b. Kitų judančiųjų dalių ir suktuko mechanizmo tepimas [Kartą per metus]',
+  'Elektros pavarų, galutinės padėties tikrintuvų ir jų garnitūrų išorinės būklės tikrinimas; iešmų smailės prigludimo prie rėminio bėgio tikrinimas laužtuvėliu [kartą per savaitę]',
+  'Iešmų išorinės būklės ir smailių prigludimo prie rėminio bėgio, įdėjus 4 mm ir 2 mm storio tarpamačius; Smailių prigludimo prie rėminio bėgio tikrinimas, ties galutinės padėties tikrintuvu įdėjus 6 mm ir 2 mm storio tarpamačius [Kartą per dvi savaites]',
+  'Išorinis elektros pavarų, galutinės padėties tikrintuvų ir jų garnitūrų valymas [Du kartus per metus]',
+  'Elektros pavarų ir galutinės padėties tikrintuvų vidaus būklės tikrinimas [Kartą per keturias savaites]',
+  'Elektros variklio įtampos matavimas [Kartą per metus]',
 ]
 
-const DARBO_CENTRAI: { name: string; stations: { name: string; objects: string[] }[] }[] = [
+type ObjItem = { name: string; sistema: string; kelioTipas: string }
+function makeObjs(count: number, base: number, suffix: string, step = 2): ObjItem[] {
+  return Array.from({ length: count }, (_, i) => ({
+    name: `Iešmas Nr. ${base + i * step}${suffix}`,
+    sistema: SISTEMOS[i % SISTEMOS.length],
+    kelioTipas: KELIO_TIPAI[i % KELIO_TIPAI.length],
+  }))
+}
+
+const DARBO_CENTRAI: { name: string; stations: { name: string; objects: ObjItem[] }[] }[] = [
   { name: 'Šiaulių darbo centras', stations: [
-    { name: 'Šiaulių gel. stotis', objects: ['Iešmas Nr. 1K', 'Iešmas Nr. 3K', 'Iešmas Nr. 5K', 'Iešmas Nr. 7K', 'Iešmas Nr. 9K', 'Iešmas Nr. 11K', 'Iešmas Nr. 13K', 'Iešmas Nr. 15K'] },
-    { name: 'Zoknių gel. stotis', objects: ['Iešmas Nr. 2K', 'Iešmas Nr. 4K', 'Iešmas Nr. 6K', 'Iešmas Nr. 8K', 'Iešmas Nr. 10K', 'Iešmas Nr. 12K'] },
-    { name: 'Bugenių gel. stotis', objects: ['Iešmas Nr. 101K', 'Iešmas Nr. 103K', 'Iešmas Nr. 105K', 'Iešmas Nr. 107K'] },
+    { name: 'Šiaulių gel. stotis', objects: makeObjs(320, 1, 'K') },
+    { name: 'Zoknių gel. stotis', objects: makeObjs(240, 2, 'K') },
+    { name: 'Bugenių gel. stotis', objects: makeObjs(160, 101, 'K') },
   ]},
   { name: 'Kužių darbo centras', stations: [
-    { name: 'Kužių gel. stotis', objects: ['Iešmas Nr. 201K', 'Iešmas Nr. 203K', 'Iešmas Nr. 205K', 'Iešmas Nr. 207K', 'Iešmas Nr. 209K'] },
-    { name: 'Radviliškio gel. stotis', objects: ['Iešmas Nr. 1L', 'Iešmas Nr. 3L', 'Iešmas Nr. 5L', 'Iešmas Nr. 7L', 'Iešmas Nr. 9L', 'Iešmas Nr. 11L', 'Iešmas Nr. 13L'] },
-    { name: 'Šeduvos gel. stotis', objects: ['Iešmas Nr. 301K', 'Iešmas Nr. 303K', 'Iešmas Nr. 305K'] },
+    { name: 'Kužių gel. stotis', objects: makeObjs(200, 201, 'K') },
+    { name: 'Radviliškio gel. stotis', objects: makeObjs(280, 1, 'L') },
+    { name: 'Šeduvos gel. stotis', objects: makeObjs(120, 301, 'K') },
   ]},
   { name: 'Akmenės darbo centras', stations: [
-    { name: 'Akmenės gel. stotis', objects: ['Iešmas Nr. 401K', 'Iešmas Nr. 403K', 'Iešmas Nr. 405K', 'Iešmas Nr. 407K', 'Iešmas Nr. 409K', 'Iešmas Nr. 411K'] },
-    { name: 'Viekšnių gel. stotis', objects: ['Iešmas Nr. 501K', 'Iešmas Nr. 503K', 'Iešmas Nr. 505K', 'Iešmas Nr. 507K'] },
-    { name: 'Papilės gel. stotis', objects: ['Iešmas Nr. 601K', 'Iešmas Nr. 603K', 'Iešmas Nr. 605K', 'Iešmas Nr. 607K', 'Iešmas Nr. 609K'] },
+    { name: 'Akmenės gel. stotis', objects: makeObjs(240, 401, 'K') },
+    { name: 'Viekšnių gel. stotis', objects: makeObjs(160, 501, 'K') },
+    { name: 'Papilės gel. stotis', objects: makeObjs(200, 601, 'K') },
   ]},
   { name: 'Rokiškio darbo centras', stations: [
-    { name: 'Rokiškio gel. stotis', objects: ['Iešmas Nr. 701K', 'Iešmas Nr. 703K', 'Iešmas Nr. 705K', 'Iešmas Nr. 707K', 'Iešmas Nr. 709K', 'Iešmas Nr. 711K', 'Iešmas Nr. 713K'] },
-    { name: 'Panevėžio gel. stotis', objects: ['Iešmas Nr. 801K', 'Iešmas Nr. 803K', 'Iešmas Nr. 805K', 'Iešmas Nr. 807K', 'Iešmas Nr. 809K', 'Iešmas Nr. 811K', 'Iešmas Nr. 813K', 'Iešmas Nr. 815K'] },
-    { name: 'Kupiškio gel. stotis', objects: ['Iešmas Nr. 901K', 'Iešmas Nr. 903K', 'Iešmas Nr. 905K', 'Iešmas Nr. 907K', 'Iešmas Nr. 909K'] },
+    { name: 'Rokiškio gel. stotis', objects: makeObjs(280, 701, 'K') },
+    { name: 'Panevėžio gel. stotis', objects: makeObjs(320, 801, 'K') },
+    { name: 'Kupiškio gel. stotis', objects: makeObjs(200, 901, 'K') },
   ]},
 ]
 
+
+const MENU_PROPS = {
+  disablePortal: true,
+  anchorOrigin: { vertical: 'bottom' as const, horizontal: 'left' as const },
+  transformOrigin: { vertical: 'top' as const, horizontal: 'left' as const },
+  PaperProps: { sx: { maxHeight: 220 } },
+}
 
 export function PlanuotojasV2Page() {
   const navigate = useNavigate()
   const { addV2Plan } = useV2Plans()
+  const [regionas, setRegionas] = useState('')
   const [grupe, setGrupe] = useState('')
   const [sistema, setSistema] = useState<string[]>([])
   const [kelioKategorija, setKelioKategorija] = useState('')
   const [priedai, setPriedai] = useState('')
   const [uzduotis, setUzduotis] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
-  const [loaded, setLoaded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedStations, setExpandedStations] = useState<Set<string>>(new Set())
+  const [activeStep, setActiveStep] = useState(0)
+  const [attrModalOpen, setAttrModalOpen] = useState(false)
+  const [attrDraft, setAttrDraft] = useState<Set<string>>(new Set())
+  const [activeAttrs, setActiveAttrs] = useState<Set<string>>(new Set())
+  const [attrSistema, setAttrSistema] = useState<string | null>(null)
+  const [attrKelioTipas, setAttrKelioTipas] = useState<string | null>(null)
+  const [attrKastuCentras, setAttrKastuCentras] = useState<string | null>(null)
+  const [attrKategorija, setAttrKategorija] = useState<string | null>(null)
+  const [attrDarboCentras, setAttrDarboCentras] = useState<string | null>(null)
+  const [attrKompanijosKodas, setAttrKompanijosKodas] = useState<string | null>(null)
+  const [attrKelijoPriedai, setAttrKelijoPriedai] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!priedai) { setLoaded(false); return }
-    setLoaded(false)
-    setLoading(true)
-    const t = setTimeout(() => { setLoading(false); setLoaded(true) }, 800)
-    return () => clearTimeout(t)
-  }, [priedai])
+  const ATTR_OPTIONS = [
+    'Sistema',
+    'Kelio tipas',
+    'Kelio priedai',
+    'Kaštų centras',
+    'Kategorija',
+    'Darbo centras',
+    'Kompanijos kodas',
+  ]
+
+  function openAttrModal() {
+    setAttrDraft(new Set(activeAttrs))
+    setAttrModalOpen(true)
+  }
+
+  function saveAttrs() {
+    setActiveAttrs(new Set(attrDraft))
+    setAttrModalOpen(false)
+  }
 
   const toggleGroup = (g: string) => {
     setExpandedGroups(prev => { const s = new Set(prev); s.has(g) ? s.delete(g) : s.add(g); return s })
@@ -138,131 +165,198 @@ export function PlanuotojasV2Page() {
     setExpandedStations(prev => { const s = new Set(prev); s.has(st) ? s.delete(st) : s.add(st); return s })
   }
 
+  function filterObj(obj: ObjItem): boolean {
+    if (attrSistema && obj.sistema !== attrSistema) return false
+    if (attrKelioTipas && obj.kelioTipas !== attrKelioTipas) return false
+    return true
+  }
+
+  const filteredDarboCentrai = DARBO_CENTRAI.map(dc => ({
+    ...dc,
+    stations: dc.stations.map(st => ({
+      ...st,
+      objects: st.objects.filter(filterObj),
+    })).filter(st => st.objects.length > 0),
+  })).filter(dc => dc.stations.length > 0)
+
+  const filteredTotal = filteredDarboCentrai.reduce((acc, dc) => acc + dc.stations.reduce((a, s) => a + s.objects.length, 0), 0)
+
   return (
-    <WebAppShell>
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', bgcolor: 'background.paper' }}>
+    <>
+    <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.paper' }}>
         <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Typography variant="subtitle1" fontWeight={600}>Naujas planinis darbas</Typography>
           <IconButton size="small" onClick={() => navigate('/planuotojas')}><CloseIcon fontSize="small" /></IconButton>
         </Box>
 <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <Box sx={{ flex: 1, borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Box sx={{ flex: '0 0 33.333%', borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Stepper activeStep={activeStep} sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+              <Step><StepLabel><Typography variant="caption">Pasirinkti objektus</Typography></StepLabel></Step>
+              <Step><StepLabel><Typography variant="caption">Priskirti užduotis</Typography></StepLabel></Step>
+            </Stepper>
             <Box sx={{ p: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Pasirinkti objektų tipą</Typography>
-              <FormControl fullWidth size="small">
-                <InputLabel>Pasirinkti objektų grupę</InputLabel>
-                <Select
-                  value={grupe}
-                  onChange={e => setGrupe(e.target.value)}
-                  label="Pasirinkti objektų grupę"
-                >
-                  {OBJEKTU_GRUPES.map(g => (
-                    <MenuItem key={g} value={g}>{g}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {grupe && <FormControl fullWidth size="small">
-                <InputLabel>Iešmų sistema</InputLabel>
-                <Select
-                  multiple
-                  value={sistema}
-                  onChange={e => setSistema(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
-                  input={<OutlinedInput label="Iešmų sistema" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map(v => <Chip key={v} label={v} size="small" />)}
-                    </Box>
-                  )}
-                >
-                  {SISTEMOS.map(s => (
-                    <MenuItem key={s} value={s}>{s}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>}
+              {activeStep === 1 && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Priskirti užduotis</Typography>
+                    <Typography variant="caption" color="text.secondary">{uzduotis.length}/{UZDUOTYS.length}</Typography>
+                  </Box>
+                  <Stack spacing={1}>
+                    {UZDUOTYS.map(u => {
+                      const checked = uzduotis.includes(u)
+                      const match = u.match(/^(.*?)\s*\[([^\]]+)\]$/)
+                      const taskText = match ? match[1].trim() : u
+                      const daznumas = match ? match[2] : ''
+                      return (
+                        <Box
+                          key={u}
+                          onClick={() => setUzduotis(prev => checked ? prev.filter(x => x !== u) : [...prev, u])}
+                          sx={{
+                            border: 2,
+                            borderColor: checked ? 'primary.main' : 'divider',
+                            borderRadius: 1.5,
+                            px: 1.5,
+                            py: 1,
+                            cursor: 'pointer',
+                            bgcolor: checked ? 'primary.50' : 'background.paper',
+                            '&:hover': { borderColor: 'primary.main' },
+                            transition: 'all 0.15s',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 1,
+                          }}
+                        >
+                          <Checkbox size="small" checked={checked} disableRipple sx={{ p: 0, mt: '1px', flexShrink: 0 }} />
+                          <Stack spacing={0.5}>
+                            <Box>
+                              <Typography component="span" variant="caption" color="text.secondary">Užduotis: </Typography>
+                              <Typography component="span" variant="caption" sx={{ lineHeight: 1.5 }}>{taskText}</Typography>
+                            </Box>
+                            {daznumas && (
+                              <Box>
+                                <Typography component="span" variant="caption" color="text.secondary">Atlikimo dažnis: </Typography>
+                                <Typography component="span" variant="caption" sx={{ lineHeight: 1.5 }}>{daznumas}</Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </Box>
+                      )
+                    })}
+                  </Stack>
+                </>
+              )}
+              {activeStep === 0 && <>
+              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Pasirinkti objektus</Typography>
+              <Autocomplete
+                size="small" fullWidth
+                options={['Vilniaus', 'Kauno', 'Šiaulių', 'Klaipėdos'].map(r => `${r} regionas`)}
+                value={regionas ? `${regionas} regionas` : null}
+                onChange={(_, v) => setRegionas(v ? v.replace(' regionas', '') : '')}
+                renderInput={params => <TextField {...params} label="Regionas" />}
+              />
+
+              {regionas && <>
+              <Autocomplete
+                size="small" fullWidth
+                options={OBJEKTU_GRUPES}
+                value={grupe || null}
+                onChange={(_, v) => setGrupe(v ?? '')}
+                renderInput={params => <TextField {...params} label="Objekto tipas" />}
+              />
+              {activeAttrs.has('Sistema') && (
+                <Autocomplete size="small" fullWidth options={SISTEMOS} value={attrSistema} onChange={(_, v) => setAttrSistema(v)}
+                  renderInput={params => <TextField {...params} label="Sistema" />} />
+              )}
+              {activeAttrs.has('Kelio tipas') && (
+                <Autocomplete size="small" fullWidth options={KELIO_TIPAI} value={attrKelioTipas} onChange={(_, v) => setAttrKelioTipas(v)}
+                  renderInput={params => <TextField {...params} label="Kelio tipas" />} />
+              )}
+              {activeAttrs.has('Kelio priedai') && (
+                <Autocomplete size="small" fullWidth
+                  options={['pneumatinisSniegoValymas', 'hidrolink', 'vietinioValdymoPultas', 'atviriKontaktai']}
+                  value={attrKelijoPriedai} onChange={(_, v) => setAttrKelijoPriedai(v)}
+                  renderInput={params => <TextField {...params} label="Kelio priedai" />} />
+              )}
+              {activeAttrs.has('Kaštų centras') && (
+                <Autocomplete size="small" fullWidth options={[]} value={attrKastuCentras} onChange={(_, v) => setAttrKastuCentras(v)}
+                  renderInput={params => <TextField {...params} label="Kaštų centras" />} />
+              )}
+              {activeAttrs.has('Kategorija') && (
+                <Autocomplete size="small" fullWidth options={[]} value={attrKategorija} onChange={(_, v) => setAttrKategorija(v)}
+                  renderInput={params => <TextField {...params} label="Kategorija" />} />
+              )}
+              {activeAttrs.has('Darbo centras') && (
+                <Autocomplete size="small" fullWidth options={[]} value={attrDarboCentras} onChange={(_, v) => setAttrDarboCentras(v)}
+                  renderInput={params => <TextField {...params} label="Darbo centras" />} />
+              )}
+              {activeAttrs.has('Kompanijos kodas') && (
+                <Autocomplete size="small" fullWidth options={[]} value={attrKompanijosKodas} onChange={(_, v) => setAttrKompanijosKodas(v)}
+                  renderInput={params => <TextField {...params} label="Kompanijos kodas" />} />
+              )}
+              <Button variant="text" size="small" startIcon={<AddIcon />} sx={{ alignSelf: 'flex-start', px: 0 }} onClick={openAttrModal}>
+                Pridėti papildomus objektų pasirinkimo atributus
+              </Button>
               {sistema.length > 0 && (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Kelio kategorija</InputLabel>
-                  <Select value={kelioKategorija} onChange={e => setKelioKategorija(e.target.value)} label="Kelio kategorija">
-                    <MenuItem value="PAGRINDINIS_NESTABDOMAS">PAGRINDINIS_NESTABDOMAS (pagrindiniai ir nestabdomo važiavimo keliai)</MenuItem>
-                    <MenuItem value="KITAS">KITAS (kiti keliai)</MenuItem>
-                    <MenuItem value="KALNELIO_PAGRINDINIS">KALNELIO_PAGRINDINIS (kalnelio pagrindiniai ir pirmieji atšakynai)</MenuItem>
-                    <MenuItem value="KALNELIO_KITAS">KALNELIO_KITAS</MenuItem>
-                    <MenuItem value="SKIRSTOMASIS_KALNELIS">SKIRSTOMASIS_KALNELIS</MenuItem>
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  size="small" fullWidth
+                  options={['PAGRINDINIS_NESTABDOMAS', 'KITAS', 'KALNELIO_PAGRINDINIS', 'KALNELIO_KITAS', 'SKIRSTOMASIS_KALNELIS']}
+                  value={kelioKategorija || null}
+                  onChange={(_, v) => setKelioKategorija(v ?? '')}
+                  renderInput={params => <TextField {...params} label="Kelio kategorija" />}
+                />
               )}
               {kelioKategorija && (
-                <FormControl fullWidth size="small">
-                  <InputLabel>Priedai</InputLabel>
-                  <Select value={priedai} onChange={e => setPriedai(e.target.value)} label="Priedai">
-                    <MenuItem value="pneumatinisSniegoValymas">pneumatinisSniegoValymas</MenuItem>
-                    <MenuItem value="hidrolink">hidrolink</MenuItem>
-                    <MenuItem value="vietinioValdymoPultas">vietinioValdymoPultas</MenuItem>
-                    <MenuItem value="atviriKontaktai">atviriKontaktai</MenuItem>
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  size="small" fullWidth
+                  options={['pneumatinisSniegoValymas', 'hidrolink', 'vietinioValdymoPultas', 'atviriKontaktai']}
+                  value={priedai || null}
+                  onChange={(_, v) => setPriedai(v ?? '')}
+                  renderInput={params => <TextField {...params} label="Priedai" />}
+                />
               )}
-              <Divider />
-              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Priskirti užduotis</Typography>
-              <FormControl fullWidth size="small" disabled={!grupe || sistema.length === 0 || !kelioKategorija || !priedai} sx={{ mt: 0 }}>
-                <InputLabel>Pasirinkti užduotį</InputLabel>
-                <Select
-                  multiple
-                  value={uzduotis}
-                  onChange={e => setUzduotis(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
-                  input={<OutlinedInput label="Pasirinkti užduotį" />}
-                  renderValue={(selected) => (
-                    <Typography variant="body2" color="text.secondary">
-                      {(selected as string[]).length === 0 ? '' : `Pasirinkta: ${(selected as string[]).length}`}
-                    </Typography>
-                  )}
-                  MenuProps={{ PaperProps: { sx: { maxHeight: 320 } } }}
-                >
-                  {UZDUOTYS.map(u => (
-                    <MenuItem key={u} value={u} sx={{ whiteSpace: 'normal', fontSize: '0.75rem' }}>{u}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Stack spacing={1} sx={{ mt: -1 }}>
-              {uzduotis.map(u => (
-                <Box key={u} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1, bgcolor: 'background.paper', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-                  <Typography variant="caption" color="text.primary">{u}</Typography>
-                  <IconButton size="small" sx={{ p: 0, flexShrink: 0, mt: '-2px' }} onClick={() => setUzduotis(prev => prev.filter(x => x !== u))}>
-                    <CloseIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                </Box>
-              ))}
-              </Stack>
+              </>}
+              </>}
             </Box>
-            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
+            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0, display: 'flex', gap: 1 }}>
+              {activeStep === 1 && (
+                <Button size="small" onClick={() => setActiveStep(0)}>Atgal</Button>
+              )}
               <Button variant="contained" fullWidth size="small" onClick={() => {
-                addV2Plan({ grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, objects: DARBO_CENTRAI.flatMap(m => m.stations.flatMap(s => s.objects)) })
+                if (activeStep === 0) { setActiveStep(1); return }
+                addV2Plan({ grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, objects: filteredDarboCentrai.flatMap(m => m.stations.flatMap(s => s.objects.map(o => o.name))) })
                 navigate('/planuotojas')
-              }}>Išsaugoti</Button>
+              }}>
+                {activeStep === 0 ? 'Kitas žingsnis' : 'Išsaugoti'}
+              </Button>
             </Box>
           </Box>
 
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'grey.50' }}>
+          <Box sx={{ flex: '0 0 66.667%', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'grey.50' }}>
             <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
               <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Aptarnaujami objektai
+                Aptarnaujami objektai{grupe ? ` (${filteredTotal})` : ''}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                Šiaulių regiono kelių priežiūra
-              </Typography>
+              {(regionas || grupe || attrSistema || attrKelioTipas || attrKelijoPriedai || attrKastuCentras || attrKategorija || attrDarboCentras || attrKompanijosKodas) && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                  {regionas && <Chip size="small" sx={{ borderRadius: '999px' }} label={`${regionas} regionas`} />}
+                  {grupe && <Chip size="small" sx={{ borderRadius: '999px' }} label={grupe} />}
+                  {attrSistema && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrSistema} />}
+                  {attrKelioTipas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelioTipas} />}
+                  {attrKelijoPriedai && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelijoPriedai} />}
+                  {attrKastuCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKastuCentras} />}
+                  {attrKategorija && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKategorija} />}
+                  {attrDarboCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrDarboCentras} />}
+                  {attrKompanijosKodas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKompanijosKodas} />}
+                </Box>
+              )}
             </Box>
             <Box sx={{ flex: 1, overflowY: 'auto' }}>
-              {loading && (
-                <Stack alignItems="center" justifyContent="center" sx={{ height: '100%' }}>
-                  <CircularProgress size={24} />
-                </Stack>
-              )}
-              {!loading && !loaded && (
+              {!grupe && (
                 <Stack alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
-                  <Typography variant="caption" color="text.disabled" textAlign="center">Pasirinkite kelio tipą</Typography>
+                  <Typography variant="caption" color="text.disabled" textAlign="center">Pasirinkite objekto tipą</Typography>
                 </Stack>
               )}
-              {!loading && loaded && DARBO_CENTRAI.map(({ name, stations }) => {
+              {grupe && filteredDarboCentrai.map(({ name, stations }) => {
                 const isOpen = expandedGroups.has(name)
                 return (
                   <Box key={name}>
@@ -293,8 +387,8 @@ export function PlanuotojasV2Page() {
                             </Stack>
                             <Collapse in={stOpen}>
                               {st.objects.map(obj => (
-                                <Stack key={obj} sx={{ pl: 4, pr: 2, py: 0.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
-                                  <Typography variant="caption" color="text.secondary">{obj}</Typography>
+                                <Stack key={obj.name} sx={{ pl: 4, pr: 2, py: 0.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+                                  <Typography variant="caption" color="text.secondary">{obj.name}</Typography>
                                 </Stack>
                               ))}
                             </Collapse>
@@ -308,7 +402,44 @@ export function PlanuotojasV2Page() {
             </Box>
           </Box>
         </Box>
-      </Box>
-    </WebAppShell>
+    </Box>
+
+      <Dialog open={attrModalOpen} onClose={() => setAttrModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ pr: 6 }}>
+          <Typography variant="subtitle1" fontWeight={600}>Pasirinkti atributus</Typography>
+          <Typography variant="caption" color="text.secondary">Iešmai ir sankirtos</Typography>
+          <IconButton size="small" onClick={() => setAttrModalOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ py: 1 }}>
+          <Stack>
+            {ATTR_OPTIONS.map(attr => (
+              <FormControlLabel
+                key={attr}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={attrDraft.has(attr)}
+                    onChange={e => {
+                      setAttrDraft(prev => {
+                        const next = new Set(prev)
+                        e.target.checked ? next.add(attr) : next.delete(attr)
+                        return next
+                      })
+                    }}
+                  />
+                }
+                label={<Typography variant="body2">{attr}</Typography>}
+              />
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.5 }}>
+          <Button size="small" onClick={() => setAttrModalOpen(false)}>Atšaukti</Button>
+          <Button size="small" variant="contained" disableElevation onClick={saveAttrs}>Išsaugoti</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }

@@ -734,6 +734,62 @@ function DarboCentraiTabContent() {
   )
 }
 
+const ATRIBUTAI: { pavadinimas: string; vienetas: string; tipas: string; privalomas: boolean }[] = []
+
+function AtributaiTabContent() {
+  const [search, setSearch] = useState('')
+
+  const filtered = ATRIBUTAI.filter(a =>
+    !search || a.pavadinimas.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      <Box sx={{ px: 2, pt: 1.5, pb: 1.5, borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 1.5, alignItems: 'center' }}>
+        <TextField
+          size="small" fullWidth
+          placeholder="Ieškoti atributų..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <Button variant="contained" size="small" startIcon={<AddIcon />} disableElevation sx={{ whiteSpace: 'nowrap' }}>
+          Naujas
+        </Button>
+      </Box>
+      <TableContainer sx={{ flex: 1, overflowY: 'auto' }}>
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 600 }}>Pavadinimas</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Tipas</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Vienetas</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Privalomas</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filtered.map(a => (
+              <TableRow key={a.pavadinimas} hover sx={{ cursor: 'pointer' }}>
+                <TableCell><Typography variant="caption">{a.pavadinimas}</Typography></TableCell>
+                <TableCell><Typography variant="caption">{a.tipas}</Typography></TableCell>
+                <TableCell><Typography variant="caption">{a.vienetas}</Typography></TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={a.privalomas ? 'Taip' : 'Ne'}
+                    color={a.privalomas ? 'primary' : 'default'}
+                    variant={a.privalomas ? 'filled' : 'outlined'}
+                    sx={{ fontSize: 10, height: 18 }}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  )
+}
+
 export function ObjektaiPage() {
   const { tabSlug } = useParams<{ tabSlug: string }>()
   const navigate = useNavigate()
@@ -750,7 +806,8 @@ export function ObjektaiPage() {
         {tabIndex === 0 && <UzduotysTabContent />}
         {tabIndex === 1 && <TechObjektaiTabContent />}
         {tabIndex === 2 && <DarboCentraiTabContent />}
-        {tabIndex !== 0 && tabIndex !== 1 && tabIndex !== 2 && <Box sx={{ flex: 1 }} />}
+        {tabIndex === 4 && <AtributaiTabContent />}
+        {tabIndex !== 0 && tabIndex !== 1 && tabIndex !== 2 && tabIndex !== 4 && <Box sx={{ flex: 1 }} />}
       </Box>
     </WebAppShell>
   )

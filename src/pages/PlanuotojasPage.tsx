@@ -6,7 +6,7 @@ import {
   Chip, Autocomplete, TextField, IconButton, Breadcrumbs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl, Collapse,
-  Menu, Tabs, Tab,
+  Tabs, Tab,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -271,7 +271,6 @@ export function PlanuotojasPage() {
   const [rrule, setRrule] = useState<string | null>(null)
   const [rrule2, setRrule2] = useState<string | null>(null)
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null)
-  const [createAnchor, setCreateAnchor] = useState<null | HTMLElement>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined)
   const [mapZoom, setMapZoom] = useState(16)
@@ -377,20 +376,9 @@ export function PlanuotojasPage() {
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={700}>Objektų aptarnavimo planai</Typography>
-          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={e => setCreateAnchor(e.currentTarget)}>
+          <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => navigate('/planuotojas/naujas-v2')}>
             Sukurti planą
           </Button>
-          <Menu anchorEl={createAnchor} open={Boolean(createAnchor)} onClose={() => setCreateAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          >
-            <MenuItem onClick={() => { setCreateAnchor(null); navigate('/planuotojas/naujas') }}>
-              Versija 1
-            </MenuItem>
-            <MenuItem onClick={() => { setCreateAnchor(null); navigate('/planuotojas/naujas-v2') }}>
-              Versija 2
-            </MenuItem>
-          </Menu>
         </Stack>
 
         {v2Plans.length > 0 && (
