@@ -1,10 +1,12 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
-import { NOW } from '../../utils/now'
+const MOBILE_NOW = new Date('2026-05-05T10:00:00')
 import { useNavigate } from 'react-router-dom'
 import { Box, Typography, Stack, Chip, Divider, Button, IconButton, Dialog, DialogContent } from '@mui/material'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import PlayArrowIcon from '@mui/icons-material/PlayArrow'
+import StopIcon from '@mui/icons-material/Stop'
 import { tasksByOffset, type Status } from './data'
 import { usePranesimai } from './PranesiamaiContext'
 import { UzduotisAtaskaitaScreen } from './UzduotisAtaskaitaScreen'
@@ -31,33 +33,24 @@ export function UzduotysTab() {
   const [offset, setOffset] = useState(0)
   const [showMap, setShowMap] = useState(false)
   const [filter, setFilter] = useState<Filter>('all')
-  const allTasksForTimer = tasksByOffset[0] ?? []
-  const [timers, setTimers] = useState<Record<string, { startedAt: number | null; accumulated: number }>>(() => {
-    const init: Record<string, { startedAt: number | null; accumulated: number }> = {}
-    allTasksForTimer.filter(t => t.status === 'pending').forEach(t => {
-      init[t.id] = { startedAt: Date.now(), accumulated: 0 }
-    })
-    return init
-  })
-  const [tick, setTick] = useState(0)
   const [pauseModal, setPauseModal] = useState<string | null>(null)
   const [completeModal, setCompleteModal] = useState<{ id: string; title: string; subtitle: string; elapsed: number; pranesimasId?: string } | null>(null)
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set())
+  const [runningTimers, setRunningTimers] = useState<Record<string, number>>({})
+  const [tick, setTick] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   useEffect(() => {
-    const running = Object.values(timers).some(t => t.startedAt !== null)
-    if (!running) return
+    if (Object.keys(runningTimers).length === 0) return
     const interval = setInterval(() => setTick(n => n + 1), 1000)
     return () => clearInterval(interval)
-  }, [timers])
+  }, [runningTimers])
 
   function getElapsed(id: string) {
     void tick
-    const t = timers[id]
-    if (!t) return 0
-    const extra = t.startedAt ? Math.floor((Date.now() - t.startedAt) / 1000) : 0
-    return t.accumulated + extra
+    const startedAt = runningTimers[id]
+    if (!startedAt) return 0
+    return Math.floor((Date.now() - startedAt) / 1000)
   }
 
   function formatElapsed(secs: number) {
@@ -67,18 +60,6 @@ export function UzduotysTab() {
     return h > 0
       ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
       : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }
-
-  function handleTimerToggle(id: string) {
-    setTimers(prev => {
-      const t = prev[id] ?? { startedAt: null, accumulated: 0 }
-      if (t.startedAt === null) {
-        return { ...prev, [id]: { ...t, startedAt: Date.now() } }
-      } else {
-        const extra = Math.floor((Date.now() - t.startedAt) / 1000)
-        return { ...prev, [id]: { startedAt: null, accumulated: t.accumulated + extra } }
-      }
-    })
   }
   const navigate = useNavigate()
   const { updateWorkOrderStatus } = usePranesimai()
@@ -101,7 +82,7 @@ export function UzduotysTab() {
     iframeRef.current?.contentWindow?.postMessage({ type: 'SET_PINS', pins }, '*')
   }, [tasks])
 
-  const today = useMemo(() => new Date(NOW), [])
+  const today = useMemo(() => new Date(MOBILE_NOW), [])
   const todayDow = today.getDay()
   const mondayOffset = todayDow === 0 ? -6 : 1 - todayDow
 
@@ -232,20 +213,10 @@ export function UzduotysTab() {
               bgcolor: 'background.paper',
               borderRadius: '8px',
               border: '1px solid',
-              borderColor: task.status === 'pending' && timers[task.id]?.startedAt ? '#007749' : 'divider',
+              borderColor: 'divider',
               overflow: 'hidden',
               cursor: 'pointer',
               '&:active': { opacity: 0.7 },
-              ...(task.status === 'pending' && timers[task.id]?.startedAt && {
-                animationName: 'borderPulse',
-                animationDuration: '2s',
-                animationTimingFunction: 'ease-in-out',
-                animationIterationCount: 'infinite',
-              }),
-              '@keyframes borderPulse': {
-                '0%, 100%': { borderColor: '#007749' },
-                '50%': { borderColor: 'rgba(0,119,73,0.15)' },
-              },
             }}
           >
             <Box sx={{ p: 2 }}>
@@ -258,7 +229,7 @@ export function UzduotysTab() {
                   {task.subtitle}
                 </Typography>
               </Box>
-              {task.status === 'pending' && (
+              {runningTimers[task.id] && (
                 <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
                   {formatElapsed(getElapsed(task.id))}
                 </Typography>
@@ -275,11 +246,22 @@ export function UzduotysTab() {
             </Box>
             {task.status === 'pending' && (
               <Box
-                onClick={e => { e.stopPropagation(); setCompleteModal({ id: task.id, title: task.title, subtitle: task.subtitle, elapsed: getElapsed(task.id), pranesimasId: task.pranesimasId }) }}
-                sx={{ bgcolor: 'primary.main', px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', '&:active': { opacity: 0.85 } }}
+                onClick={e => {
+                  e.stopPropagation()
+                  if (runningTimers[task.id]) {
+                    setCompleteModal({ id: task.id, title: task.title, subtitle: task.subtitle, elapsed: getElapsed(task.id), pranesimasId: task.pranesimasId })
+                  } else {
+                    setRunningTimers(prev => ({ ...prev, [task.id]: Date.now() }))
+                  }
+                }}
+                sx={{ bgcolor: runningTimers[task.id] ? 'error.main' : 'primary.main', px: 2, py: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, cursor: 'pointer', '&:active': { opacity: 0.85 } }}
               >
+                {runningTimers[task.id]
+                  ? <StopIcon sx={{ fontSize: 18, color: 'primary.contrastText' }} />
+                  : <PlayArrowIcon sx={{ fontSize: 18, color: 'primary.contrastText' }} />
+                }
                 <Typography variant="body2" fontWeight={600} color="primary.contrastText">
-                  Baigti užduotį
+                  {runningTimers[task.id] ? 'Baigti užduotį' : 'Pradėti užduotį'}
                 </Typography>
               </Box>
             )}
@@ -309,7 +291,7 @@ export function UzduotysTab() {
             Užduoties statusas
           </Typography>
           <Stack spacing={1.5}>
-            <Button fullWidth variant="outlined" onClick={() => { handleTimerToggle(pauseModal!); setPauseModal(null) }}>
+            <Button fullWidth variant="outlined" onClick={() => setPauseModal(null)}>
               Tęsti
             </Button>
             <Button fullWidth variant="contained" onClick={() => { setPauseModal(null); setCompleteModal(true) }}>
@@ -330,7 +312,7 @@ export function UzduotysTab() {
               if (completeModal.pranesimasId) updateWorkOrderStatus(completeModal.pranesimasId, 'pending_approval', {
                 ...report,
                 elapsed: completeModal.elapsed,
-                completedAt: NOW.toLocaleDateString('lt-LT'),
+                completedAt: MOBILE_NOW.toLocaleDateString('lt-LT'),
               })
               setCompleteModal(null)
             }}

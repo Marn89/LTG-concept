@@ -21,7 +21,6 @@ const TABS: { label: string; slug: string }[] = [
   { label: 'Užduotys',      slug: 'darbai' },
   { label: 'Tech objektai', slug: 'tech-objektai' },
   { label: 'Darbo centrai', slug: 'darbo-centrai' },
-  { label: 'Sandėliai',     slug: 'sandeliai' },
 ]
 
 type SortKey = keyof DarboCentras

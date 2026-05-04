@@ -26,6 +26,7 @@ export default function App() {
       <Route path="/planuotojas" element={<PlanuotojasPage />} />
       <Route path="/planuotojas/naujas" element={<PlanuotojasPage />} />
       <Route path="/planuotojas/naujas-v2" element={<PlanuotojasV2Page />} />
+      <Route path="/planuotojas/redaguoti-v2/:id" element={<PlanuotojasV2Page />} />
       <Route path="/planuotojas/uzduotys" element={<UzduotysPage />} />
       <Route path="/objektai" element={<Navigate to="/objektai/darbai" replace />} />
       <Route path="/objektai/:tabSlug" element={<ObjektaiPage />} />

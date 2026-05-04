@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Box, Typography, IconButton, Chip, Divider, Stack, Collapse, Button, Autocomplete, TextField, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Stepper, Step, StepLabel } from '@mui/material'
+import { useState, useRef } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Box, Typography, IconButton, Chip, Divider, Stack, Collapse, Button, Autocomplete, TextField, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Checkbox, Popover, Drawer, List, ListItemButton, ListItemText } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import AddIcon from '@mui/icons-material/Add'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { useV2Plans } from '../features/planuotojas/PlanuotojasV2Context'
+import type { V2Plan } from '../features/planuotojas/PlanuotojasV2Context'
 
 const SISTEMOS = [
   'SP_TRIFAZE',
@@ -75,6 +76,14 @@ const UZDUOTYS = [
   'Elektros variklio įtampos matavimas [Kartą per metus]',
 ]
 
+export const UZDUOTYS_DC: Record<string, string> = {
+  'Elektros pavarų, galutinės padėties tikrintuvų ir jų garnitūrų išorinės būklės tikrinimas; iešmų smailės prigludimo prie rėminio bėgio tikrinimas laužtuvėliu [kartą per savaitę]': 'AM',
+  'Išorinis elektros pavarų, galutinės padėties tikrintuvų ir jų garnitūrų valymas [Du kartus per metus]': 'AM',
+  'Iešmų išorinės būklės ir smailių prigludimo prie rėminio bėgio, įdėjus 4 mm ir 2 mm storio tarpamačius; Smailių prigludimo prie rėminio bėgio tikrinimas, ties galutinės padėties tikrintuvu įdėjus 6 mm ir 2 mm storio tarpamačius [Kartą per dvi savaites]': 'AM; Kelių priežiūros darbuotojas',
+  'Elektros pavarų ir galutinės padėties tikrintuvų vidaus būklės tikrinimas [Kartą per keturias savaites]': 'AM',
+  'Elektros variklio įtampos matavimas [Kartą per metus]': 'AM',
+}
+
 type ObjItem = { name: string; sistema: string; kelioTipas: string }
 function makeObjs(count: number, base: number, suffix: string, step = 2): ObjItem[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -117,26 +126,44 @@ const MENU_PROPS = {
 
 export function PlanuotojasV2Page() {
   const navigate = useNavigate()
-  const { addV2Plan } = useV2Plans()
-  const [regionas, setRegionas] = useState('')
-  const [grupe, setGrupe] = useState('')
-  const [sistema, setSistema] = useState<string[]>([])
-  const [kelioKategorija, setKelioKategorija] = useState('')
-  const [priedai, setPriedai] = useState('')
-  const [uzduotis, setUzduotis] = useState<string[]>([])
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const { id: editId } = useParams<{ id: string }>()
+  const { addV2Plan, updateV2Plan, v2Plans } = useV2Plans()
+  const editPlan: V2Plan | undefined = editId ? v2Plans.find(p => p.id === editId) : undefined
+
+  const [regionas, setRegionas] = useState(editPlan?.regionas ?? '')
+  const [grupe, setGrupe] = useState(editPlan?.grupe ?? '')
+  const [sistema, setSistema] = useState<string[]>(editPlan?.sistema ?? [])
+  const [kelioKategorija, setKelioKategorija] = useState(editPlan?.kelioKategorija ?? '')
+  const [priedai, setPriedai] = useState(editPlan?.priedai ?? '')
+  const [uzduotis, setUzduotis] = useState<string[]>(editPlan?.uzduotys ?? [])
+  const [galiojaNuo, setGaliojaNuo] = useState(editPlan?.galiojaNuo ?? '')
+  const [galiojaIki, setGaliojaIki] = useState(editPlan?.galiojaIki ?? '')
   const [expandedStations, setExpandedStations] = useState<Set<string>>(new Set())
-  const [activeStep, setActiveStep] = useState(0)
   const [attrModalOpen, setAttrModalOpen] = useState(false)
   const [attrDraft, setAttrDraft] = useState<Set<string>>(new Set())
-  const [activeAttrs, setActiveAttrs] = useState<Set<string>>(new Set())
-  const [attrSistema, setAttrSistema] = useState<string | null>(null)
-  const [attrKelioTipas, setAttrKelioTipas] = useState<string | null>(null)
-  const [attrKastuCentras, setAttrKastuCentras] = useState<string | null>(null)
-  const [attrKategorija, setAttrKategorija] = useState<string | null>(null)
-  const [attrDarboCentras, setAttrDarboCentras] = useState<string | null>(null)
-  const [attrKompanijosKodas, setAttrKompanijosKodas] = useState<string | null>(null)
-  const [attrKelijoPriedai, setAttrKelijoPriedai] = useState<string | null>(null)
+  const [activeAttrs, setActiveAttrs] = useState<Set<string>>(new Set(editPlan ? Object.keys(editPlan.atributai ?? {}) : []))
+  const [attrSistema, setAttrSistema] = useState<string | null>(editPlan?.atributai?.['Sistema'] ?? null)
+  const [attrKelioTipas, setAttrKelioTipas] = useState<string | null>(editPlan?.atributai?.['Kelio tipas'] ?? null)
+  const [attrKastuCentras, setAttrKastuCentras] = useState<string | null>(editPlan?.atributai?.['Kaštų centras'] ?? null)
+  const [attrKategorija, setAttrKategorija] = useState<string | null>(editPlan?.atributai?.['Kategorija'] ?? null)
+  const [attrDarboCentras, setAttrDarboCentras] = useState<string | null>(editPlan?.atributai?.['Darbo centras'] ?? null)
+  const [attrKompanijosKodas, setAttrKompanijosKodas] = useState<string | null>(editPlan?.atributai?.['Kompanijos kodas'] ?? null)
+  const [attrKelijoPriedai, setAttrKelijoPriedai] = useState<string | null>(editPlan?.atributai?.['Kelio priedai'] ?? null)
+  const [stationDates, setStationDates] = useState<Record<string, string>>(() => {
+    if (!editPlan) return {}
+    const dates: Record<string, string> = {}
+    for (const dc of editPlan.darboCentrai ?? [])
+      for (const st of dc.stations)
+        if (st.paleidimoData) dates[st.name] = st.paleidimoData
+    return dates
+  })
+  const [deselectedObjects, setDeselectedObjects] = useState<Set<string>>(new Set())
+  const [addObjectDrawer, setAddObjectDrawer] = useState(false)
+  const [drawerStation, setDrawerStation] = useState<string | null>(null)
+  const [drawerSelected, setDrawerSelected] = useState<Set<string>>(new Set())
+  const [extraObjects, setExtraObjects] = useState<Record<string, string[]>>({})
+  const [dateAnchor, setDateAnchor] = useState<{ el: HTMLElement; station: string } | null>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
 
   const ATTR_OPTIONS = [
     'Sistema',
@@ -158,12 +185,10 @@ export function PlanuotojasV2Page() {
     setAttrModalOpen(false)
   }
 
-  const toggleGroup = (g: string) => {
-    setExpandedGroups(prev => { const s = new Set(prev); s.has(g) ? s.delete(g) : s.add(g); return s })
-  }
   const toggleStation = (st: string) => {
     setExpandedStations(prev => { const s = new Set(prev); s.has(st) ? s.delete(st) : s.add(st); return s })
   }
+
 
   function filterObj(obj: ObjItem): boolean {
     if (attrSistema && obj.sistema !== attrSistema) return false
@@ -185,67 +210,12 @@ export function PlanuotojasV2Page() {
     <>
     <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'background.paper' }}>
         <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="subtitle1" fontWeight={600}>Naujas planinis darbas</Typography>
+          <Typography variant="subtitle1" fontWeight={600}>{editId ? 'Redaguoti planą' : 'Naujas planinis darbas'}</Typography>
           <IconButton size="small" onClick={() => navigate('/planuotojas')}><CloseIcon fontSize="small" /></IconButton>
         </Box>
 <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           <Box sx={{ flex: '0 0 33.333%', borderRight: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Stepper activeStep={activeStep} sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
-              <Step><StepLabel><Typography variant="caption">Pasirinkti objektus</Typography></StepLabel></Step>
-              <Step><StepLabel><Typography variant="caption">Priskirti užduotis</Typography></StepLabel></Step>
-            </Stepper>
             <Box sx={{ p: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-              {activeStep === 1 && (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Priskirti užduotis</Typography>
-                    <Typography variant="caption" color="text.secondary">{uzduotis.length}/{UZDUOTYS.length}</Typography>
-                  </Box>
-                  <Stack spacing={1}>
-                    {UZDUOTYS.map(u => {
-                      const checked = uzduotis.includes(u)
-                      const match = u.match(/^(.*?)\s*\[([^\]]+)\]$/)
-                      const taskText = match ? match[1].trim() : u
-                      const daznumas = match ? match[2] : ''
-                      return (
-                        <Box
-                          key={u}
-                          onClick={() => setUzduotis(prev => checked ? prev.filter(x => x !== u) : [...prev, u])}
-                          sx={{
-                            border: 2,
-                            borderColor: checked ? 'primary.main' : 'divider',
-                            borderRadius: 1.5,
-                            px: 1.5,
-                            py: 1,
-                            cursor: 'pointer',
-                            bgcolor: checked ? 'primary.50' : 'background.paper',
-                            '&:hover': { borderColor: 'primary.main' },
-                            transition: 'all 0.15s',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 1,
-                          }}
-                        >
-                          <Checkbox size="small" checked={checked} disableRipple sx={{ p: 0, mt: '1px', flexShrink: 0 }} />
-                          <Stack spacing={0.5}>
-                            <Box>
-                              <Typography component="span" variant="caption" color="text.secondary">Užduotis: </Typography>
-                              <Typography component="span" variant="caption" sx={{ lineHeight: 1.5 }}>{taskText}</Typography>
-                            </Box>
-                            {daznumas && (
-                              <Box>
-                                <Typography component="span" variant="caption" color="text.secondary">Atlikimo dažnis: </Typography>
-                                <Typography component="span" variant="caption" sx={{ lineHeight: 1.5 }}>{daznumas}</Typography>
-                              </Box>
-                            )}
-                          </Stack>
-                        </Box>
-                      )
-                    })}
-                  </Stack>
-                </>
-              )}
-              {activeStep === 0 && <>
               <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Pasirinkti objektus</Typography>
               <Autocomplete
                 size="small" fullWidth
@@ -260,7 +230,7 @@ export function PlanuotojasV2Page() {
                 size="small" fullWidth
                 options={OBJEKTU_GRUPES}
                 value={grupe || null}
-                onChange={(_, v) => setGrupe(v ?? '')}
+                onChange={(_, v) => { setGrupe(v ?? ''); setExpandedStations(new Set()) }}
                 renderInput={params => <TextField {...params} label="Objekto tipas" />}
               />
               {activeAttrs.has('Sistema') && (
@@ -315,41 +285,128 @@ export function PlanuotojasV2Page() {
                 />
               )}
               </>}
-              </>}
-            </Box>
-            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0, display: 'flex', gap: 1 }}>
-              {activeStep === 1 && (
-                <Button size="small" onClick={() => setActiveStep(0)}>Atgal</Button>
+              <Divider sx={{ mx: -2 }} />
+              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Priskirti užduotis</Typography>
+              <Autocomplete
+                multiple
+                size="small"
+                fullWidth
+                disableCloseOnSelect
+                options={UZDUOTYS}
+                value={uzduotis}
+                onChange={(_, v) => setUzduotis(v)}
+                getOptionLabel={opt => {
+                  const match = opt.match(/^(.*?)\s*\[([^\]]+)\]$/)
+                  return match ? match[1].trim() : opt
+                }}
+                renderTags={(value) => value.length > 0
+                  ? <Typography variant="body2" sx={{ ml: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
+                      {(() => { const m = value[0].match(/^(.*?)\s*\[([^\]]+)\]$/); return m ? m[1].trim() : value[0] })()}
+                      {value.length > 1 && <Typography component="span" variant="body2" color="text.secondary"> +{value.length - 1}</Typography>}
+                    </Typography>
+                  : null
+                }
+                renderInput={params => <TextField {...params} label="Pasirinkti užduotis" />}
+              />
+              <Typography variant="caption" color="text.secondary">Pasirinktos užduotys ({uzduotis.length}):</Typography>
+              {uzduotis.length > 0 && (
+                <Stack spacing={0.5}>
+                  {uzduotis.map(u => {
+                    const match = u.match(/^(.*?)\s*\[([^\]]+)\]$/)
+                    const label = match ? match[1].trim() : u
+                    const daznumas = match ? match[2] : null
+                    return (
+                      <Box key={u} sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 0.5, bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: '8px', px: 1.5, py: 0.75 }}>
+                        <Stack spacing={0.25} sx={{ flex: 1 }}>
+                          <Typography variant="caption" sx={{ lineHeight: 1.5 }}>{label}</Typography>
+                          {daznumas && <Typography variant="caption" color="text.secondary">Periodiškumas: {daznumas}</Typography>}
+                          <Typography variant="caption" color="text.secondary">DC: {UZDUOTYS_DC[u] ?? '—'}</Typography>
+                        </Stack>
+                        <IconButton size="small" sx={{ p: 0, mt: '1px', flexShrink: 0 }} onClick={() => setUzduotis(prev => prev.filter(x => x !== u))}>
+                          <CloseIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    )
+                  })}
+                </Stack>
               )}
+              <Divider sx={{ mx: -2 }} />
+              <Typography variant="caption" color="text.secondary" fontWeight={600} textTransform="uppercase">Plano galiojimas</Typography>
+              <TextField
+                label="Planas galioja nuo"
+                type="date"
+                size="small"
+                fullWidth
+                value={galiojaNuo}
+                onChange={e => setGaliojaNuo(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  '& input::-webkit-datetime-edit-fields-wrapper': { color: galiojaNuo ? 'text.primary' : 'text.secondary' },
+                  '& input::-webkit-datetime-edit-text': { color: galiojaNuo ? 'text.primary' : 'text.secondary' },
+                }}
+              />
+              <TextField
+                label="Galioja iki"
+                type="date"
+                size="small"
+                fullWidth
+                value={galiojaIki}
+                onChange={e => setGaliojaIki(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+                sx={{
+                  '& input::-webkit-datetime-edit-fields-wrapper': { color: galiojaIki ? 'text.primary' : 'text.secondary' },
+                  '& input::-webkit-datetime-edit-text': { color: galiojaIki ? 'text.primary' : 'text.secondary' },
+                }}
+              />
+            </Box>
+            <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
               <Button variant="contained" fullWidth size="small" onClick={() => {
-                if (activeStep === 0) { setActiveStep(1); return }
-                addV2Plan({ grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, objects: filteredDarboCentrai.flatMap(m => m.stations.flatMap(s => s.objects.map(o => o.name))) })
+                const darboCentrai = filteredDarboCentrai.map(dc => ({
+                  name: dc.name,
+                  stations: dc.stations.map(st => ({
+                    name: st.name,
+                    objects: [
+                      ...st.objects.filter(o => !deselectedObjects.has(o.name)).map(o => o.name),
+                      ...(extraObjects[st.name] ?? []),
+                    ],
+                    paleidimoData: stationDates[st.name] ?? '',
+                  })),
+                }))
+                const atributai: Record<string, string> = {}
+                if (attrSistema) atributai['Sistema'] = attrSistema
+                if (attrKelioTipas) atributai['Kelio tipas'] = attrKelioTipas
+                if (attrKelijoPriedai) atributai['Kelio priedai'] = attrKelijoPriedai
+                if (attrKastuCentras) atributai['Kaštų centras'] = attrKastuCentras
+                if (attrKategorija) atributai['Kategorija'] = attrKategorija
+                if (attrDarboCentras) atributai['Darbo centras'] = attrDarboCentras
+                if (attrKompanijosKodas) atributai['Kompanijos kodas'] = attrKompanijosKodas
+                const payload = { regionas, grupe, sistema, kelioKategorija, priedai, uzduotys: uzduotis, atributai, galiojaNuo, galiojaIki, darboCentrai, objects: darboCentrai.flatMap(dc => dc.stations.flatMap(s => s.objects)) }
+                if (editId) { updateV2Plan(editId, payload) } else { addV2Plan(payload) }
                 navigate('/planuotojas')
               }}>
-                {activeStep === 0 ? 'Kitas žingsnis' : 'Išsaugoti'}
+                Išsaugoti
               </Button>
             </Box>
           </Box>
 
           <Box sx={{ flex: '0 0 66.667%', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: 'grey.50' }}>
-            <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
-              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>
-                Aptarnaujami objektai{grupe ? ` (${filteredTotal})` : ''}
-              </Typography>
-              {(regionas || grupe || attrSistema || attrKelioTipas || attrKelijoPriedai || attrKastuCentras || attrKategorija || attrDarboCentras || attrKompanijosKodas) && (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                  {regionas && <Chip size="small" sx={{ borderRadius: '999px' }} label={`${regionas} regionas`} />}
-                  {grupe && <Chip size="small" sx={{ borderRadius: '999px' }} label={grupe} />}
-                  {attrSistema && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrSistema} />}
-                  {attrKelioTipas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelioTipas} />}
-                  {attrKelijoPriedai && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelijoPriedai} />}
-                  {attrKastuCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKastuCentras} />}
-                  {attrKategorija && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKategorija} />}
-                  {attrDarboCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrDarboCentras} />}
-                  {attrKompanijosKodas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKompanijosKodas} />}
-                </Box>
-              )}
+            <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', flexShrink: 0 }}>
+              <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, color: 'text.secondary' }}>Aptarnaujami objektai</Typography>
             </Box>
+            {grupe && (
+              <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', flexShrink: 0, display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>Iš viso {filteredTotal}:</Typography>
+                {regionas && <Chip size="small" sx={{ borderRadius: '999px' }} label={`${regionas} regionas`} />}
+                {grupe && <Chip size="small" sx={{ borderRadius: '999px' }} label={grupe} />}
+                {attrSistema && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrSistema} />}
+                {attrKelioTipas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelioTipas} />}
+                {attrKelijoPriedai && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKelijoPriedai} />}
+                {attrKastuCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKastuCentras} />}
+                {attrKategorija && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKategorija} />}
+                {attrDarboCentras && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrDarboCentras} />}
+                {attrKompanijosKodas && <Chip size="small" sx={{ borderRadius: '999px' }} label={attrKompanijosKodas} />}
+              </Box>
+            )}
             <Box sx={{ flex: 1, overflowY: 'auto' }}>
               {!grupe && (
                 <Stack alignItems="center" justifyContent="center" sx={{ height: '100%', px: 2 }}>
@@ -357,20 +414,12 @@ export function PlanuotojasV2Page() {
                 </Stack>
               )}
               {grupe && filteredDarboCentrai.map(({ name, stations }) => {
-                const isOpen = expandedGroups.has(name)
                 return (
                   <Box key={name}>
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      onClick={() => toggleGroup(name)}
-                      sx={{ px: 2, py: 1.5, bgcolor: 'grey.50', borderBottom: 1, borderColor: 'divider', cursor: 'pointer', '&:hover': { bgcolor: 'grey.100' } }}
-                    >
+                    <Box sx={{ px: 2, py: 1.5, bgcolor: 'grey.50', borderBottom: 1, borderColor: 'divider' }}>
                       <Typography variant="body2" fontWeight={500}>{name} <Typography component="span" variant="caption" color="text.secondary">({stations.reduce((a, s) => a + s.objects.length, 0)})</Typography></Typography>
-                      <ExpandMoreIcon sx={{ fontSize: 16, color: 'text.disabled', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                    </Stack>
-                    <Collapse in={isOpen}>
+                    </Box>
+                    <>
                       {stations.map(st => {
                         const stOpen = expandedStations.has(st.name)
                         return (
@@ -379,23 +428,46 @@ export function PlanuotojasV2Page() {
                               direction="row"
                               alignItems="center"
                               justifyContent="space-between"
-                              onClick={() => toggleStation(st.name)}
-                              sx={{ pl: 3, pr: 2, py: 1, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                              sx={{ pl: 3, pr: 2, py: 1, minHeight: 40, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}
                             >
-                              <Typography variant="caption" fontWeight={500} color="text.primary">{st.name} <Typography component="span" variant="caption" color="text.secondary">({st.objects.length})</Typography></Typography>
-                              <ExpandMoreIcon sx={{ fontSize: 14, color: 'text.disabled', transform: stOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <ExpandMoreIcon onClick={() => toggleStation(st.name)} sx={{ fontSize: 14, color: 'text.disabled', transform: stOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', cursor: 'pointer' }} />
+                                <Typography variant="caption" fontWeight={500} color="text.primary">{st.name} <Typography component="span" variant="caption" color="text.secondary">({st.objects.length})</Typography></Typography>
+                              </Stack>
+                              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ whiteSpace: 'nowrap' }}>
+                                <Typography variant="caption" color="text.secondary">Plano paleidimas:</Typography>
+                                {stationDates[st.name]
+                                  ? <Typography variant="caption" fontWeight={500} color="text.primary">{stationDates[st.name]}</Typography>
+                                  : <Button size="small" variant="text" sx={{ fontSize: 11, px: 0, py: 0, minWidth: 0, verticalAlign: 'baseline' }}
+                                      onClick={e => setDateAnchor({ el: e.currentTarget, station: st.name })}>
+                                      Pasirinkti
+                                    </Button>
+                                }
+                              </Stack>
                             </Stack>
                             <Collapse in={stOpen}>
-                              {st.objects.map(obj => (
-                                <Stack key={obj.name} sx={{ pl: 4, pr: 2, py: 0.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
-                                  <Typography variant="caption" color="text.secondary">{obj.name}</Typography>
-                                </Stack>
-                              ))}
+                              {[...st.objects, ...(extraObjects[st.name] ?? []).map(name => ({ name, sistema: '', kelioTipas: '' }))].map(obj => {
+                                const checked = !deselectedObjects.has(obj.name)
+                                return (
+                                  <Stack key={obj.name} direction="row" alignItems="center" spacing={0.5}
+                                    onClick={() => setDeselectedObjects(prev => { const s = new Set(prev); s.has(obj.name) ? s.delete(obj.name) : s.add(obj.name); return s })}
+                                    sx={{ pl: 3, pr: 2, py: 0.5, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                                  >
+                                    <Checkbox size="small" checked={checked} disableRipple sx={{ p: 0, flexShrink: 0 }} />
+                                    <Typography variant="caption" color={checked ? 'text.secondary' : 'text.disabled'}>{obj.name}</Typography>
+                                  </Stack>
+                                )
+                              })}
+                              <Box sx={{ pl: 3, pr: 2, py: 0.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+                                <Button size="small" variant="text" startIcon={<AddIcon />} sx={{ fontSize: 11, px: 0, py: 0, minWidth: 0 }} onClick={() => { setDrawerStation(st.name); setDrawerSelected(new Set()); setAddObjectDrawer(true) }}>
+                                  Pridėti objektą
+                                </Button>
+                              </Box>
                             </Collapse>
                           </Box>
                         )
                       })}
-                    </Collapse>
+                    </>
                   </Box>
                 )
               })}
@@ -440,6 +512,58 @@ export function PlanuotojasV2Page() {
           <Button size="small" variant="contained" disableElevation onClick={saveAttrs}>Išsaugoti</Button>
         </DialogActions>
       </Dialog>
+
+      <Popover
+        open={!!dateAnchor}
+        anchorEl={dateAnchor?.el}
+        onClose={() => setDateAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        TransitionProps={{ onEntered: () => dateInputRef.current?.showPicker?.() }}
+        PaperProps={{ sx: { overflow: 'hidden', boxShadow: 'none', bgcolor: 'transparent', p: 0 } }}
+      >
+        <TextField
+          type="date"
+          size="small"
+          inputRef={dateInputRef}
+          value={dateAnchor ? (stationDates[dateAnchor.station] ?? '') : ''}
+          onChange={e => {
+            if (dateAnchor) setStationDates(prev => ({ ...prev, [dateAnchor.station]: e.target.value }))
+            setDateAnchor(null)
+          }}
+          sx={{ width: 1, height: 1, opacity: 0, overflow: 'hidden' }}
+        />
+      </Popover>
+
+      <Drawer anchor="right" open={addObjectDrawer} onClose={() => setAddObjectDrawer(false)}
+        sx={{ zIndex: 1400 }}
+        PaperProps={{ sx: { width: 320, borderRadius: 0, display: 'flex', flexDirection: 'column' } }}
+      >
+        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <Typography variant="subtitle2" fontWeight={600}>Pridėti objektą</Typography>
+          <IconButton size="small" onClick={() => setAddObjectDrawer(false)}><CloseIcon fontSize="small" /></IconButton>
+        </Box>
+        <List dense disablePadding sx={{ flex: 1, overflowY: 'auto' }}>
+          {Array.from({ length: 30 }, (_, i) => `Iešmas Nr. ${1001 + i * 2}`).map(name => {
+            const checked = drawerSelected.has(name)
+            return (
+              <ListItemButton key={name} onClick={() => setDrawerSelected(prev => { const s = new Set(prev); s.has(name) ? s.delete(name) : s.add(name); return s })} sx={{ borderBottom: 1, borderColor: 'divider', gap: 1 }}>
+                <Checkbox size="small" checked={checked} disableRipple sx={{ p: 0, flexShrink: 0 }} />
+                <ListItemText primary={name} primaryTypographyProps={{ variant: 'body2' }} />
+              </ListItemButton>
+            )
+          })}
+        </List>
+        <Box sx={{ px: 2, py: 1.5, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 1, flexShrink: 0 }}>
+          <Button size="small" fullWidth onClick={() => setAddObjectDrawer(false)}>Atšaukti</Button>
+          <Button size="small" variant="contained" fullWidth disableElevation onClick={() => {
+            if (drawerStation && drawerSelected.size > 0) {
+              setExtraObjects(prev => ({ ...prev, [drawerStation]: [...(prev[drawerStation] ?? []), ...Array.from(drawerSelected)] }))
+            }
+            setAddObjectDrawer(false)
+          }}>Pridėti</Button>
+        </Box>
+      </Drawer>
     </>
   )
 }

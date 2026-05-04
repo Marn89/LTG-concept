@@ -6,21 +6,26 @@ import {
   Chip, Autocomplete, TextField, IconButton, Breadcrumbs,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   Checkbox, FormControlLabel, Select, MenuItem, InputLabel, FormControl, Collapse,
-  Tabs, Tab,
+  Tabs, Tab, Menu, ListItemIcon, ListItemText,
 } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddIcon from '@mui/icons-material/Add'
 import EventBusyOutlinedIcon from '@mui/icons-material/EventBusyOutlined'
-import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined'
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined'
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined'
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
+import DirectionsRailwayOutlinedIcon from '@mui/icons-material/DirectionsRailwayOutlined'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import { WebAppShell } from '../layout/WebAppShell'
 import { ROKISKIS_TOP_LEVEL, ROKISKIS_BY_PARENT, type TechObject } from '../data/rokiskisObjects'
 import { RecurrencePicker } from '../components/RecurrencePicker'
 import { StationMap } from '../components/StationMap'
 import { LOKACIJA_COORDS } from '../data/rokiskisCoords'
 import { IESMAI_SUTEPIMAS, IESMAI_SUTEPIMAS_GROUPED } from '../data/iesmaiSutepimas'
+import { UZDUOTYS_DC } from './PlanuotojasV2Page'
 const POPPER_PROPS = {
   placement: 'bottom-start' as const,
   modifiers: [{ name: 'flip', enabled: false }],
@@ -257,8 +262,10 @@ export function PlanuotojasPage() {
   const location = useLocation()
   const { planId } = useParams<{ planId: string }>()
   const open = location.pathname === '/planuotojas/naujas'
-  const { v2Plans } = useV2Plans()
+  const { v2Plans, deleteV2Plan } = useV2Plans()
   const [selectedV2, setSelectedV2] = useState<typeof v2Plans[0] | null>(null)
+  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; id: string } | null>(null)
+  const [expandedPreviewStations, setExpandedPreviewStations] = useState<Set<string>>(new Set())
   const [v2Tab, setV2Tab] = useState(0)
   const [planiniai, setPlaniniai] = useState<PlaninisDarbas[]>([])
   const selected = planId ? (planiniai.find(p => String(p.id) === planId) ?? null) : null
@@ -355,24 +362,7 @@ export function PlanuotojasPage() {
   }
 
   return (
-    <WebAppShell headerActions={
-      <>
-        <IconButton size="small" onClick={() => navigate('/planuotojas/uzduotys')}>
-          <AssignmentOutlinedIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small">
-          <CategoryOutlinedIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" onClick={() => {
-          const QUICK_OPTIONS = ['Periodinė iešmų patikra','MPC spintų patikra','Periodinė Šviesaforų patikra','GS RES priežiūra','SĮ kabelių patikra','NMŠ patikra']
-          const darbas = QUICK_OPTIONS[Math.floor(Math.random() * QUICK_OPTIONS.length)]
-          const today = new Date().toISOString().split('T')[0]
-          setPlaniniai(prev => [...prev, { id: Date.now(), darbas, startDate: today, objektai: IESMAI_SUTEPIMAS, rrule: 'FREQ=WEEKLY', rrule2: null }])
-        }}>
-          <AddIcon fontSize="small" />
-        </IconButton>
-      </>
-    }>
+    <WebAppShell>
       <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={700}>Objektų aptarnavimo planai</Typography>
@@ -382,16 +372,38 @@ export function PlanuotojasPage() {
         </Stack>
 
         {v2Plans.length > 0 && (
-          <Stack spacing={1} sx={{ mb: 2 }}>
-            {v2Plans.map((p, i) => (
-              <Box key={i} onClick={() => setSelectedV2(p)} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5, bgcolor: 'background.paper', cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}>
-                <Typography variant="body2" fontWeight={500}>
-                  {p.grupe} / {p.sistema.join(', ')} / {p.kelioKategorija} / {p.priedai}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">Užduočių skaičius: {p.uzduotys.length}</Typography>
-              </Box>
-            ))}
-          </Stack>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 2 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'grey.50' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Tech. objektų grupė</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Statusas</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Regionas</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Užduotys</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Objektai</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Planas galioja nuo</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {v2Plans.map(p => (
+                  <TableRow key={p.id} hover sx={{ cursor: 'pointer' }} onClick={() => setSelectedV2(p)}>
+                    <TableCell><Typography variant="body2">{p.grupe || '—'}</Typography></TableCell>
+                    <TableCell><Chip label="Aktyvus" size="small" color="success" variant="outlined" /></TableCell>
+                    <TableCell><Typography variant="body2">{p.regionas || '—'}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{p.uzduotys.length}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{p.objects.length}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{p.galiojaNuo || '—'}</Typography></TableCell>
+                    <TableCell align="right" onClick={e => e.stopPropagation()}>
+                      <IconButton size="small" onClick={e => setMenuAnchor({ el: e.currentTarget, id: p.id })}>
+                        <MoreVertIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
         {planiniai.length === 0 ? (
@@ -429,6 +441,24 @@ export function PlanuotojasPage() {
         )}
 
       </Box>
+
+      <Menu open={!!menuAnchor} anchorEl={menuAnchor?.el} onClose={() => setMenuAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={() => setMenuAnchor(null)}>
+          <ListItemIcon><EditOutlinedIcon fontSize="small" /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ variant: 'body2' }}>Redaguoti</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => setMenuAnchor(null)}>
+          <ListItemIcon><PauseCircleOutlineIcon fontSize="small" /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ variant: 'body2' }}>Stabdyti</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => { if (menuAnchor) deleteV2Plan(menuAnchor.id); setMenuAnchor(null) }} sx={{ color: 'error.main' }}>
+          <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon>
+          <ListItemText primaryTypographyProps={{ variant: 'body2' }}>Ištrinti</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {open && (
       <Box sx={{ position: 'fixed', inset: 0, zIndex: 1300, bgcolor: 'grey.100', display: 'flex', overflow: 'hidden' }}>
@@ -738,55 +768,109 @@ export function PlanuotojasPage() {
           <Box sx={{ width: '100%', maxWidth: 560, bgcolor: 'background.paper', borderRadius: '8px', boxShadow: 4, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 3, py: 2, borderBottom: 0, flexShrink: 0 }}>
               <Typography variant="subtitle1" fontWeight={700}>Iešmų priežiūros planas</Typography>
-              <IconButton size="small" onClick={() => { setSelectedV2(null); setV2Tab(0) }}><CloseIcon fontSize="small" /></IconButton>
+              <IconButton size="small" onClick={() => { setSelectedV2(null); setV2Tab(0); setExpandedPreviewStations(new Set()) }}><CloseIcon fontSize="small" /></IconButton>
             </Stack>
             <Tabs value={v2Tab} onChange={(_, v) => setV2Tab(v)} sx={{ px: 3, borderBottom: 1, borderColor: 'divider', flexShrink: 0, minHeight: 40, '& .MuiTab-root': { minHeight: 40, fontSize: '0.75rem' } }}>
-              <Tab label="Pagrindinis" />
-              <Tab label="Objektai" />
+              <Tab label="Plano informacija" />
+              <Tab label="Aptarnaujami objektai" />
+              <Tab label="Užduotys" />
             </Tabs>
             <Box sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2.5 }}>
               {v2Tab === 0 && (
                 <Stack spacing={2}>
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary">Objektų grupė</Typography>
-                    <Typography variant="body2">{selectedV2.grupe}</Typography>
-                  </Stack>
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary">Sistema</Typography>
-                    <Typography variant="body2">{selectedV2.sistema.join(', ')}</Typography>
-                  </Stack>
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary">Kelio kategorija</Typography>
-                    <Typography variant="body2">{selectedV2.kelioKategorija}</Typography>
-                  </Stack>
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary">Priedai</Typography>
-                    <Typography variant="body2">{selectedV2.priedai}</Typography>
-                  </Stack>
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary">Užduotys</Typography>
-                    <Stack spacing={0.5} sx={{ mt: 0.5 }}>
-                      {selectedV2.uzduotys.map(u => (
-                        <Box key={u} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75 }}>
-                          <Typography variant="caption">{u}</Typography>
-                        </Box>
-                      ))}
+                  {selectedV2.regionas && (
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">Regionas</Typography>
+                      <Typography variant="body2">{selectedV2.regionas} regionas</Typography>
                     </Stack>
+                  )}
+                  <Stack spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">Tech. objektų grupė</Typography>
+                    <Typography variant="body2">{selectedV2.grupe || '—'}</Typography>
                   </Stack>
+                  {selectedV2.galiojaNuo && (
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">Planas galioja nuo</Typography>
+                      <Typography variant="body2">{selectedV2.galiojaNuo}</Typography>
+                    </Stack>
+                  )}
+                  {Object.keys(selectedV2.atributai ?? {}).length > 0 && (
+                    <>
+                      <Divider />
+                      {Object.entries(selectedV2.atributai).map(([key, val]) => (
+                        <Stack key={key} spacing={0.5}>
+                          <Typography variant="caption" color="text.secondary">{key}</Typography>
+                          <Typography variant="body2">{val}</Typography>
+                        </Stack>
+                      ))}
+                    </>
+                  )}
                 </Stack>
               )}
               {v2Tab === 1 && (
-                <Stack spacing={1}>
-                  {selectedV2.objects.map(obj => (
-                    <Box key={obj} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 1 }}>
-                      <Typography variant="body2">{obj}</Typography>
+                <Stack spacing={1.5}>
+                  {(selectedV2.darboCentrai ?? []).map(dc => (
+                    <Box key={dc.name}>
+                      <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>{dc.name}</Typography>
+                      <Stack spacing={0.5} sx={{ mt: 0.75 }}>
+                        {dc.stations.map(st => {
+                          const stOpen = expandedPreviewStations.has(st.name)
+                          return (
+                            <Box key={st.name} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+                              <Stack direction="row" alignItems="center" justifyContent="space-between"
+                                onClick={() => setExpandedPreviewStations(prev => { const s = new Set(prev); s.has(st.name) ? s.delete(st.name) : s.add(st.name); return s })}
+                                sx={{ px: 1.5, py: 1, bgcolor: 'grey.50', cursor: 'pointer', '&:hover': { bgcolor: 'grey.100' } }}
+                              >
+                                <Stack direction="row" alignItems="center" spacing={0.75}>
+                                  <ExpandMoreIcon sx={{ fontSize: 16, color: 'text.disabled', transform: stOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                                  <Typography variant="body2" fontWeight={500}>{st.name}</Typography>
+                                  <Typography variant="caption" color="text.secondary">({st.objects.length})</Typography>
+                                </Stack>
+                                {st.paleidimoData
+                                  ? <Typography variant="caption" color="text.secondary">Nuo: {st.paleidimoData}</Typography>
+                                  : <Typography variant="caption" color="text.disabled">Data nenustatyta</Typography>
+                                }
+                              </Stack>
+                              <Collapse in={stOpen}>
+                                {st.objects.map(obj => (
+                                  <Box key={obj} sx={{ px: 1.5, py: 0.5, borderTop: 1, borderColor: 'divider' }}>
+                                    <Typography variant="caption" color="text.secondary">{obj}</Typography>
+                                  </Box>
+                                ))}
+                              </Collapse>
+                            </Box>
+                          )
+                        })}
+                      </Stack>
                     </Box>
                   ))}
+                  {!(selectedV2.darboCentrai ?? []).length && (
+                    <Typography variant="caption" color="text.disabled">Nėra objektų</Typography>
+                  )}
+                </Stack>
+              )}
+              {v2Tab === 2 && (
+                <Stack spacing={0.75}>
+                  {selectedV2.uzduotys.length === 0 && (
+                    <Typography variant="caption" color="text.disabled">Nėra užduočių</Typography>
+                  )}
+                  {selectedV2.uzduotys.map(u => {
+                    const m = u.match(/^(.*?)\s*\[([^\]]+)\]$/)
+                    const dc = UZDUOTYS_DC[u]
+                    return (
+                      <Box key={u} sx={{ border: 1, borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.75 }}>
+                        <Typography variant="caption">{m ? m[1].trim() : u}</Typography>
+                        {m && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Periodiškumas: {m[2]}</Typography>}
+                        {dc && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>DC: {dc}</Typography>}
+                      </Box>
+                    )
+                  })}
                 </Stack>
               )}
             </Box>
-            <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0 }}>
+            <Box sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider', flexShrink: 0, display: 'flex', gap: 1 }}>
               <Button onClick={() => { setSelectedV2(null); setV2Tab(0) }}>Uždaryti</Button>
+              <Button variant="contained" disableElevation onClick={() => { navigate(`/planuotojas/redaguoti-v2/${selectedV2.id}`); setSelectedV2(null); setV2Tab(0) }}>Redaguoti</Button>
             </Box>
           </Box>
         </Box>
